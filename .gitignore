@@ -1,0 +1,7 @@
+.vs/
+.vscode/
+images/
+packages/
+x64/
+
+*.pfx
