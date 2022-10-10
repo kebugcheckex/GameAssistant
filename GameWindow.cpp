@@ -6,22 +6,40 @@
 
 using namespace winrt::Windows::Graphics::Capture;
 
-GameWindow::GameWindow(const std::string& windowName) {
-  hwnd_ = FindWindow(NULL, L"Microsoft Sudoku");
+GameWindow::GameWindow() {
+  // TODO probably should not hardcode FindWindowA here, should use FindWindow instead.
+  // That requires additional handling of wstring
+  hwnd_ = FindWindowA(NULL, kWindowName.data());
   if (hwnd_ == NULL) {
-    throw std::runtime_error("Failed to find window");
+    throw std::runtime_error("Failed to find game window");
+  }
+
+  MoveWindow(hwnd_, 100, 100, 1700, 1700, TRUE);
+
+  if (!GetWindowRect(hwnd_, &windowRect_)) {
+    throw std::runtime_error("Failed to get game window rect");
   }
 
   auto d3dDevice = robmikh::common::uwp::CreateD3DDevice();
   auto dxgiDevice = d3dDevice.as<IDXGIDevice>();
-  m_device = CreateDirect3DDevice(dxgiDevice.get());
+  device_ = CreateDirect3DDevice(dxgiDevice.get());
+}
+
+RECT GameWindow::getWindowRect() { return windowRect_; }
+
+RECT GameWindow::getMonitorRect() {
+  HMONITOR monitor = MonitorFromWindow(hwnd_, MONITOR_DEFAULTTONEAREST);
+  MONITORINFO info;
+  info.cbSize = sizeof(MONITORINFO);
+  GetMonitorInfo(monitor, &info);
+  return info.rcMonitor;
 }
 
 cv::Mat GameWindow::getSnapshot() {
   GraphicsCaptureItem item{ nullptr };
   item = robmikh::common::desktop::CreateCaptureItemForWindow(hwnd_);
   auto pixelFormat = winrt::Windows::Graphics::DirectX::DirectXPixelFormat::B8G8R8A8UIntNormalized;
-  auto coro{ CaptureSnapshot::TakeAsync(m_device, item, pixelFormat) };
+  auto coro{ CaptureSnapshot::TakeAsync(device_, item, pixelFormat) };
   auto texture = coro.get();  // await sync
 
   D3D11_TEXTURE2D_DESC desc = {};
@@ -33,8 +51,8 @@ cv::Mat GameWindow::getSnapshot() {
   // For some reason initializing the Mat directly from bytes causes some mysterious errors
   // I have to manually fill the Mat
   int count = 0;
-  for (int i = 0; i < desc.Height; i++) {
-    for (int j = 0; j < desc.Width; j++) {
+  for (unsigned int i = 0; i < desc.Height; i++) {
+    for (unsigned int j = 0; j < desc.Width; j++) {
       cv::Vec4b pixel{ bytes[count], bytes[count + 1], bytes[count + 2], bytes[count + 3] };
       count += 4;
       window.at<cv::Vec4b>(i, j) = pixel;

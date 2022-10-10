@@ -105,6 +105,7 @@
     <ClInclude Include="CaptureSnapshot.h" />
     <ClInclude Include="GameWindow.h" />
     <ClInclude Include="pch.h" />
+    <ClInclude Include="Player.h" />
     <ClInclude Include="SudokuRecognizer.h" />
     <ClInclude Include="SudokuSolver.h" />
   </ItemGroup>
@@ -115,6 +116,7 @@
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="Player.cpp" />
     <ClCompile Include="SudokuRecognizer.cpp" />
     <ClCompile Include="SudokuSolver.cpp" />
   </ItemGroup>

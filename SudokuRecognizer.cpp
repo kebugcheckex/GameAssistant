@@ -39,6 +39,7 @@ cv::Rect SudokuRecognizer::findBoard() {
     if (starting.x < 50 || starting.y < 50 || ending.x > _image.cols - 50 ||
       starting.y < 300) {
       // exclude lines found outside the board area
+      // TODO this depends on the window size, need to use relative locations
       continue;
     }
 
@@ -54,6 +55,10 @@ cv::Rect SudokuRecognizer::findBoard() {
 
   std::sort(linePoints.begin(), linePoints.end(),
     [](cv::Point a, cv::Point b) { return a.x <= b.x && a.y <= b.y; });
+  boardRect_.left = linePoints[0].x;
+  boardRect_.top = linePoints[0].y;
+  boardRect_.right = linePoints[7].x;
+  boardRect_.bottom = linePoints[7].y;
   return cv::Rect(linePoints[0], linePoints[7]);
 }
 
@@ -131,3 +136,5 @@ void SudokuRecognizer::clearBoard() {
     }
   }
 }
+
+RECT SudokuRecognizer::getBoardRect() { return boardRect_; }
