@@ -2,6 +2,7 @@
 #include "SudokuRecognizer.h"
 
 #include <opencv2/imgproc.hpp>
+#include <opencv2/highgui.hpp>
 #include <tesseract/baseapi.h>
 #include <queue>
 #include <unordered_set>
@@ -11,13 +12,14 @@ SudokuRecognizer::SudokuRecognizer() {
 }
 
 void SudokuRecognizer::loadImage(cv::Mat image) {
-  _image = image;
+  image_ = image;
+  // showImage(image);
 }
 
 cv::Rect SudokuRecognizer::findBoard() {
   cv::Mat edgesImage;
   // TODO annotate these parameters or magic numbers
-  cv::Canny(_image, edgesImage, 50, 150, 3);
+  cv::Canny(image_, edgesImage, 50, 150, 3);
   std::vector<cv::Vec4i> lines;
   // TODO annotate these parameters or magic numbers
   cv::HoughLinesP(edgesImage, lines, 2, CV_PI / 180, 80, 500, 2);
@@ -36,7 +38,7 @@ cv::Rect SudokuRecognizer::findBoard() {
       ending.x = line[0];
       ending.y = line[1];
     }
-    if (starting.x < 50 || starting.y < 50 || ending.x > _image.cols - 50 ||
+    if (starting.x < 50 || starting.y < 50 || ending.x > image_.cols - 50 ||
       starting.y < 300) {
       // exclude lines found outside the board area
       // TODO this depends on the window size, need to use relative locations
@@ -59,7 +61,12 @@ cv::Rect SudokuRecognizer::findBoard() {
   boardRect_.top = linePoints[0].y;
   boardRect_.right = linePoints[7].x;
   boardRect_.bottom = linePoints[7].y;
-  return cv::Rect(linePoints[0], linePoints[7]);
+  
+  cv::Rect boardRect(linePoints[0], linePoints[7]);
+  /*cv::Mat displayImage = image_.clone();
+  cv::rectangle(displayImage, boardRect, cv::Scalar(0, 0, 255), 2);
+  showImage(displayImage);*/
+  return boardRect;
 }
 
 void SudokuRecognizer::removeBoundary(cv::Mat& image) {
@@ -74,7 +81,7 @@ void SudokuRecognizer::removeBoundary(cv::Mat& image) {
     if (x < 0 || x >= image.rows || y < 0 || y >= image.cols) {
       continue;
     }
-    int index = x * _image.cols + y;
+    int index = x * image_.cols + y;
     if (scanned.find(index) != scanned.end()) {
       continue;
     }
@@ -88,40 +95,53 @@ void SudokuRecognizer::removeBoundary(cv::Mat& image) {
     pending.push(cv::Point(x - 1, y));
     pending.push(cv::Point(x, y - 1));
   }
+  // showImage(image);
 }
 
 bool SudokuRecognizer::recognize() {
   auto rect = findBoard();
   cv::Mat boardImage;
-  _image(rect).copyTo(boardImage);
-  cv::Mat displayImage = _image.clone();
+  image_(rect).copyTo(boardImage);
+  cv::Mat displayImage = boardImage.clone();
   cv::cvtColor(boardImage, boardImage, cv::COLOR_BGR2GRAY);
   cv::threshold(boardImage, boardImage, 245, 255, cv::THRESH_BINARY);
   std::unordered_set<int> scanned;
   removeBoundary(boardImage);
-  // TODO annotate the magic numbers
-  int blockSize = boardImage.rows / 9 - 2;
-  cv::Mat block;
 
+  // offset the thick boundaries by minus 1
+  int blockSize = boardImage.rows / 9 - 1;
+  
   tesseract::TessBaseAPI* ocr = new tesseract::TessBaseAPI();
   ocr->Init(NULL, "eng", tesseract::OEM_DEFAULT);
   ocr->SetPageSegMode(tesseract::PSM_SINGLE_CHAR);
+  // TODO set allowed text to numbers only to reduce errors
 
+  constexpr int kBoundaryOffset = 6;
+  cv::Mat block;
   for (int i = 0; i < 9; i++) {
     for (int j = 0; j < 9; j++) {
-      boardImage(
-        cv::Rect(blockSize * i + 2, blockSize * j + 2, blockSize, blockSize))
+      cv::Rect blockBoundary(blockSize * i + kBoundaryOffset,
+                             blockSize * j + kBoundaryOffset, blockSize,
+                             blockSize);
+      boardImage(blockBoundary)
         .copyTo(block);
       ocr->SetImage(block.data, block.cols, block.rows, 1, block.step);
       auto str = std::string(ocr->GetUTF8Text());
       if (str[0] >= '1' && str[0] <= '9') {
         _board[j][i] = std::stoi(str);
+      } else {
+        printf("Warning: could not recognize cell (%d, %d), result is %s\n", j,
+               i, str.c_str());
       }
+      // TODO wrap the following code in some debug function
+      cv::rectangle(displayImage, blockBoundary, cv::Scalar(255, 0, 0));
       cv::putText(displayImage, str.substr(0, 1),
         cv::Point(blockSize * i + 30, blockSize * j + 30),
-        cv::FONT_HERSHEY_SIMPLEX, 1.0f, cv::Scalar(0, 0, 255), 2);
+        cv::FONT_HERSHEY_SIMPLEX, 1.f, cv::Scalar(0, 0, 255), 2);
+      // end of debugging
     }
   }
+  showImage(displayImage);
   return true;
 }
 
@@ -138,3 +158,9 @@ void SudokuRecognizer::clearBoard() {
 }
 
 RECT SudokuRecognizer::getBoardRect() { return boardRect_; }
+
+/* static */
+void SudokuRecognizer::showImage(const cv::Mat& image) {
+  cv::imshow(kCvWindowName.data(), image);
+  cv::waitKey();
+}

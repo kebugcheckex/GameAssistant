@@ -64,7 +64,6 @@ bool SudokuSolver::isValidPlace(int row, int col, int num) {
 bool SudokuSolver::solve() {
   int row, col;
   if (!findEmptyPlace(row, col)) {
-    std::cout << "All places are filled\n";
     return true;
   }
   for (int num = 1; num <= 9; num++) {  // valid numbers are 1 - 9
@@ -97,7 +96,6 @@ std::vector<std::vector<int>> SudokuSolver::getSolvedBoard() {
       }
     }
   }
-  printBoard("Solved board", solvedBoard);
   return solvedBoard;
 }
 

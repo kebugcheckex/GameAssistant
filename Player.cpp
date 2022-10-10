@@ -26,7 +26,7 @@ void Player::play(const RECT& boardRect,
       clickAt(x, y);
       Sleep(1000);
       pressKey('0' + board[i][j]);
-      Sleep(2000);
+      Sleep(1000);
     }
   }
 }
@@ -52,6 +52,6 @@ void Player::pressKey(char ch) {
   inputs[1].type = INPUT_KEYBOARD;
   inputs[1].ki.wVk = ch;
   inputs[1].ki.dwFlags = KEYEVENTF_KEYUP;
-  printf("Pressing key %c\n", ch);
+  // printf("Pressing key %c\n", ch);
   SendInput(2, inputs, sizeof(INPUT));
 }
