@@ -154,7 +154,15 @@ bool SudokuRecognizer::recognize() {
 }
 
 std::vector<std::vector<int>> SudokuRecognizer::getResults() {
-  return _board;
+  return _board; }
+
+std::vector<std::pair<int, int>> SudokuRecognizer::recognizeIce() {
+  auto rect = findBoard();
+  cv::Mat boardImage;
+  image_(rect).copyTo(boardImage);
+  cv::threshold(boardImage, boardImage, 220, 255, cv::THRESH_BINARY);
+
+  return std::vector<std::pair<int, int>>();
 }
 
 void SudokuRecognizer::clearBoard() {

@@ -103,7 +103,9 @@ std::vector<std::vector<int>> SudokuSolver::getSolvedBoard() {
 void SudokuSolver::printBoard(const std::string& title,
                               const std::vector<std::vector<int>>& board) {
   constexpr std::string_view kHorizontalLine = "-------------------------\n";
-  std::cout << "==========" << title << "==========\n";
+  std::cout << "====================\n";
+  std::cout << title << "\n";
+  std::cout << "====================\n";
   std::cout << kHorizontalLine;
   for (int i = 0; i < 9; i++) {
     std::cout << "| ";

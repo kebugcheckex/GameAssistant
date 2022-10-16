@@ -4,11 +4,14 @@
 
 #include <fstream>
 #include <opencv2/imgcodecs.hpp>
+#include <gflags/gflags.h>
+
+DECLARE_bool(dev_mode);
 
 using namespace winrt::Windows::Graphics::Capture;
 
-GameWindow::GameWindow(const std::string& windowOrFileName, bool isFile) : isFile_(isFile) {
-  if (isFile) {
+GameWindow::GameWindow(const std::string& windowOrFileName) {
+  if (FLAGS_dev_mode) {
     imageFromFile_ = cv::imread(windowOrFileName);
     return;
   }
@@ -33,7 +36,7 @@ GameWindow::GameWindow(const std::string& windowOrFileName, bool isFile) : isFil
 }
 
 RECT GameWindow::getWindowRect() { 
-  if (isFile_) {
+  if (FLAGS_dev_mode) {
     throw std::runtime_error(
         "Game window loaded from image file, no window rect available");
   }
@@ -41,7 +44,7 @@ RECT GameWindow::getWindowRect() {
 }
 
 RECT GameWindow::getMonitorRect() {
-  if (isFile_) {
+  if (FLAGS_dev_mode) {
     throw std::runtime_error(
         "Game window loaded from image file, no monitor rect available");
   }
@@ -53,7 +56,7 @@ RECT GameWindow::getMonitorRect() {
 }
 
 cv::Mat GameWindow::getSnapshot() {
-  if (isFile_) {
+  if (FLAGS_dev_mode) {
     return imageFromFile_;
   }
   GraphicsCaptureItem item{ nullptr };

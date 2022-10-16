@@ -1,31 +1,33 @@
 #include "pch.h"
 
 #include "Player.h"
+#include <glog/logging.h>
+#include <fmt/core.h>
 
-Player::Player(const RECT& monitorRect) { 
+DEFINE_string(fill_order, "rows?,cols?,blocks?", "Fill ? rows/cols/blocks, e.g. rows3 means fill 3 rows");
+
+Player::Player(const RECT& monitorRect, const RECT& boardRect) { 
   screenWidth_ = monitorRect.right - monitorRect.left;
   screenHeight_ = monitorRect.bottom - monitorRect.top;
+  gridSize_ = (boardRect.right - boardRect.left) / 9;
+  boardRect_ = boardRect;
+  LOG(INFO) << fmt::format("Board Rect: ({}, {}) -> ({}, {})\n", boardRect.left,
+                      boardRect.top,
+         boardRect.right, boardRect.bottom);
 }
 
-void Player::play(const RECT& boardRect,
-                  const std::vector<std::vector<int>>& board) {
-  int gridSize = (boardRect.right - boardRect.left) / 9;
-  printf("Board Rect: (%d, %d) -> (%d, %d)\n", boardRect.left, boardRect.top,
-         boardRect.right, boardRect.bottom);
+void Player::play(const std::vector<std::vector<int>>& board) {
+  
   // Need to click in the window first to make sure it gets focus
   // And there is also an animation
-  clickAt(boardRect.left, boardRect.top - 50);
+  clickAt(boardRect_.left, boardRect_.top - 50);
   Sleep(3000);
   for (int i = 0; i < 9; i++) {
     for (int j = 0; j < 9; j++) {
       if (board[i][j] == 0) {
         continue;
       }
-      int x = boardRect.left + j * gridSize + gridSize / 2;
-      int y = boardRect.top + i * gridSize + gridSize / 2;
-      clickAt(x, y);
-      Sleep(1000);
-      pressKey('0' + board[i][j]);
+      fillAt(i, j, (char)board[i][j]);
       Sleep(1000);
     }
   }
@@ -41,7 +43,7 @@ void Player::clickAt(int x, int y) {
   inputs[1].mi.dwFlags = MOUSEEVENTF_LEFTDOWN;
   inputs[2].type = INPUT_MOUSE;
   inputs[2].mi.dwFlags = MOUSEEVENTF_LEFTUP;
-  printf("Clicking at (%d, %d)\n", x, y);
+  LOG(INFO) << fmt::format("Clicking at ({}, {})\n", x, y);
   SendInput(3, inputs, sizeof(INPUT));
 }
 
@@ -54,4 +56,12 @@ void Player::pressKey(char ch) {
   inputs[1].ki.dwFlags = KEYEVENTF_KEYUP;
   // printf("Pressing key %c\n", ch);
   SendInput(2, inputs, sizeof(INPUT));
+}
+
+void Player::fillAt(int row, int col, char value) {
+  int x = boardRect_.left + col * gridSize_ + gridSize_ / 2;
+  int y = boardRect_.top + row * gridSize_ + gridSize_ / 2;
+  clickAt(x, y);
+  Sleep(1000);
+  pressKey('0' + value);
 }

@@ -13,6 +13,7 @@ class SudokuRecognizer {
     void loadImage(cv::Mat image);
     bool recognize();
     std::vector<std::vector<int>> getResults();
+    std::vector<std::pair<int, int>> recognizeIce();
     RECT getBoardRect();
 
     static void showImage(const cv::Mat& image);
