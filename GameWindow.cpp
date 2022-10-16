@@ -3,18 +3,25 @@
 #include "CaptureSnapshot.h"
 
 #include <fstream>
+#include <opencv2/imgcodecs.hpp>
 
 using namespace winrt::Windows::Graphics::Capture;
 
-GameWindow::GameWindow() {
+GameWindow::GameWindow(const std::string& windowOrFileName, bool isFile) : isFile_(isFile) {
+  if (isFile) {
+    imageFromFile_ = cv::imread(windowOrFileName);
+    return;
+  }
+
   // TODO probably should not hardcode FindWindowA here, should use FindWindow instead.
   // That requires additional handling of wstring
-  hwnd_ = FindWindowA(NULL, kWindowName.data());
+  hwnd_ = FindWindowA(NULL, windowOrFileName.c_str());
   if (hwnd_ == NULL) {
     throw std::runtime_error("Failed to find game window");
   }
 
-  MoveWindow(hwnd_, 100, 100, 1700, 1700, TRUE);
+  // Resize the window to 1700x1700 so that the recognizer can use some hardcoded dimension values
+  MoveWindow(hwnd_, 0, 0, 1700, 1700, TRUE);
 
   if (!GetWindowRect(hwnd_, &windowRect_)) {
     throw std::runtime_error("Failed to get game window rect");
@@ -25,9 +32,19 @@ GameWindow::GameWindow() {
   device_ = CreateDirect3DDevice(dxgiDevice.get());
 }
 
-RECT GameWindow::getWindowRect() { return windowRect_; }
+RECT GameWindow::getWindowRect() { 
+  if (isFile_) {
+    throw std::runtime_error(
+        "Game window loaded from image file, no window rect available");
+  }
+  return windowRect_;
+}
 
 RECT GameWindow::getMonitorRect() {
+  if (isFile_) {
+    throw std::runtime_error(
+        "Game window loaded from image file, no monitor rect available");
+  }
   HMONITOR monitor = MonitorFromWindow(hwnd_, MONITOR_DEFAULTTONEAREST);
   MONITORINFO info;
   info.cbSize = sizeof(MONITORINFO);
@@ -36,6 +53,9 @@ RECT GameWindow::getMonitorRect() {
 }
 
 cv::Mat GameWindow::getSnapshot() {
+  if (isFile_) {
+    return imageFromFile_;
+  }
   GraphicsCaptureItem item{ nullptr };
   item = robmikh::common::desktop::CreateCaptureItemForWindow(hwnd_);
   auto pixelFormat = winrt::Windows::Graphics::DirectX::DirectXPixelFormat::B8G8R8A8UIntNormalized;

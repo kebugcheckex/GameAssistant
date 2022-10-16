@@ -4,8 +4,12 @@
 #include <opencv2/imgproc.hpp>
 #include <opencv2/highgui.hpp>
 #include <tesseract/baseapi.h>
+#include <glog/logging.h>
 #include <queue>
+#include <fmt/core.h>
 #include <unordered_set>
+
+DECLARE_bool(debug);
 
 SudokuRecognizer::SudokuRecognizer() {
   _board = std::vector<std::vector<int>>(9, std::vector<int>(9, 0));
@@ -13,7 +17,6 @@ SudokuRecognizer::SudokuRecognizer() {
 
 void SudokuRecognizer::loadImage(cv::Mat image) {
   image_ = image;
-  // showImage(image);
 }
 
 cv::Rect SudokuRecognizer::findBoard() {
@@ -45,8 +48,7 @@ cv::Rect SudokuRecognizer::findBoard() {
       continue;
     }
 
-    // TODO use glog
-    printf("Line from (%d, %d) to (%d, %d)\n", starting.x, starting.y, ending.x,
+    LOG(INFO) << fmt::format("Line from ({}, {}) to ({}, {})\n", starting.x, starting.y, ending.x,
       ending.y);
     linePoints.push_back(starting);
     linePoints.push_back(ending);
@@ -63,9 +65,11 @@ cv::Rect SudokuRecognizer::findBoard() {
   boardRect_.bottom = linePoints[7].y;
   
   cv::Rect boardRect(linePoints[0], linePoints[7]);
-  /*cv::Mat displayImage = image_.clone();
-  cv::rectangle(displayImage, boardRect, cv::Scalar(0, 0, 255), 2);
-  showImage(displayImage);*/
+  if (FLAGS_debug) {
+    cv::Mat displayImage = image_.clone();
+    cv::rectangle(displayImage, boardRect, cv::Scalar(0, 0, 255), 2);
+    showImage(displayImage);
+  }
   return boardRect;
 }
 
@@ -95,7 +99,9 @@ void SudokuRecognizer::removeBoundary(cv::Mat& image) {
     pending.push(cv::Point(x - 1, y));
     pending.push(cv::Point(x, y - 1));
   }
-  // showImage(image);
+  if (FLAGS_debug) {
+    showImage(image);
+  }
 }
 
 bool SudokuRecognizer::recognize() {
@@ -114,9 +120,9 @@ bool SudokuRecognizer::recognize() {
   tesseract::TessBaseAPI* ocr = new tesseract::TessBaseAPI();
   ocr->Init(NULL, "eng", tesseract::OEM_DEFAULT);
   ocr->SetPageSegMode(tesseract::PSM_SINGLE_CHAR);
-  // TODO set allowed text to numbers only to reduce errors
+  ocr->SetVariable("tessedit_char_whitelist", "123456789");
 
-  constexpr int kBoundaryOffset = 6;
+  constexpr int kBoundaryOffset = 7;
   cv::Mat block;
   for (int i = 0; i < 9; i++) {
     for (int j = 0; j < 9; j++) {
@@ -133,15 +139,17 @@ bool SudokuRecognizer::recognize() {
         printf("Warning: could not recognize cell (%d, %d), result is %s\n", j,
                i, str.c_str());
       }
-      // TODO wrap the following code in some debug function
+      #ifdef _DEBUG
       cv::rectangle(displayImage, blockBoundary, cv::Scalar(255, 0, 0));
       cv::putText(displayImage, str.substr(0, 1),
         cv::Point(blockSize * i + 30, blockSize * j + 30),
         cv::FONT_HERSHEY_SIMPLEX, 1.f, cv::Scalar(0, 0, 255), 2);
-      // end of debugging
+      #endif
     }
   }
-  showImage(displayImage);
+  if (FLAGS_debug) {
+    showImage(displayImage);
+  }
   return true;
 }
 

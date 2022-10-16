@@ -1,5 +1,7 @@
 ﻿#pragma once
 
+#define GLOG_NO_ABBREVIATED_SEVERITIES
+
 #include <codecvt>
 #include <iostream>
 #include <future>
@@ -15,6 +17,8 @@
 #include <windows.graphics.capture.h>
 
 #include <wil/resource.h>
+
+#include <gflags/gflags.h>
 
 #include "robmikh.common/d3dHelpers.h"
 #include "robmikh.common/d3dHelpers.desktop.h"
