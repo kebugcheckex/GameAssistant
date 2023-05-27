@@ -21,11 +21,11 @@ void SudokuRecognizer::loadImage(cv::Mat image) {
 
 cv::Rect SudokuRecognizer::findBoard() {
   cv::Mat edgesImage;
-  // TODO annotate these parameters or magic numbers
-  cv::Canny(image_, edgesImage, 50, 150, 3);
+  cv::Canny(image_, edgesImage, 50 /* threshold1 */, 150 /* threshold2 */);
   std::vector<cv::Vec4i> lines;
-  // TODO annotate these parameters or magic numbers
-  cv::HoughLinesP(edgesImage, lines, 2, CV_PI / 180, 80, 500, 2);
+  cv::HoughLinesP(edgesImage, lines, 2 /* rho */, CV_PI / 180 /* theta */,
+                  80 /* threshold */, 500 /* minLineLength  */,
+                  2 /* maxLineGap */);
   std::vector<cv::Point> linePoints;
   for (const auto& line : lines) {
     cv::Point starting, ending;
@@ -48,8 +48,8 @@ cv::Rect SudokuRecognizer::findBoard() {
       continue;
     }
 
-    LOG(INFO) << fmt::format("Line from ({}, {}) to ({}, {})\n", starting.x, starting.y, ending.x,
-      ending.y);
+    /*LOG(INFO) << fmt::format("Line from ({}, {}) to ({}, {})\n", starting.x, starting.y, ending.x,
+      ending.y);*/
     linePoints.push_back(starting);
     linePoints.push_back(ending);
   }

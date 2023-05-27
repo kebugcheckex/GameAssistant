@@ -1,11 +1,8 @@
 #pragma once
 
 #include <vector>
-#include <string_view>
 #include <opencv2/core.hpp>
 #include <Windows.h>
-
-constexpr std::string_view kCvWindowName{"Auto Sudoku"};
 
 class SudokuRecognizer {
   public:
@@ -16,7 +13,6 @@ class SudokuRecognizer {
     std::vector<std::pair<int, int>> recognizeIce();
     RECT getBoardRect();
 
-    static void showImage(const cv::Mat& image);
  private:
   cv::Rect findBoard();
   void removeBoundary(cv::Mat& image);

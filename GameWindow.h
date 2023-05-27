@@ -5,7 +5,7 @@
 #include <opencv2/core.hpp>
 
 // TODO may need i18n in other languages
-constexpr std::string_view kWindowName{ "Microsoft Sudoku" };
+constexpr std::string_view kGameWindowName{ "Microsoft Sudoku" };
 
 class GameWindow {
 public:
