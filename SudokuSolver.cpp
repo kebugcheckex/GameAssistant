@@ -7,7 +7,7 @@
 #include "pch.h"
 #include "SudokuSolver.h"
 
-SudokuSolver::SudokuSolver(std::vector<std::vector<int>> board) {
+SudokuSolver::SudokuSolver(Board board) {
   board_ = board;
   originalBoard_ = board;
   printBoard("Original Board", originalBoard_);
@@ -80,15 +80,15 @@ bool SudokuSolver::solve() {
   return false;
 }
 
-std::vector<std::vector<int>> SudokuSolver::getResults() {
+Board SudokuSolver::getResults() {
   solve();
   printBoard("Complete Board", board_);
   return board_;
 }
 
-std::vector<std::vector<int>> SudokuSolver::getSolvedBoard() {
+Board SudokuSolver::getSolvedBoard() {
   solve();
-  std::vector<std::vector<int>> solvedBoard = board_;
+  Board solvedBoard = board_;
   for (int i = 0; i < kDimension; i++) {
     for (int j = 0; j < kDimension; j++) {
       if (originalBoard_[i][j] != 0) {
@@ -100,8 +100,7 @@ std::vector<std::vector<int>> SudokuSolver::getSolvedBoard() {
 }
 
 /* static */
-void SudokuSolver::printBoard(const std::string& title,
-                              const std::vector<std::vector<int>>& board) {
+void SudokuSolver::printBoard(const std::string& title, const Board& board) {
   constexpr std::string_view kHorizontalLine = "-------------------------\n";
   std::cout << "====================\n";
   std::cout << title << "\n";

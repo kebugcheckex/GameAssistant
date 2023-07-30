@@ -3,17 +3,19 @@
 #include <vector>
 #include <string>
 
+#include "Defs.h"
+
 constexpr int kDimension = 9;
 
 class SudokuSolver {
 public:
-  SudokuSolver(std::vector<std::vector<int>> board);
+  SudokuSolver(Board board);
   bool solve();
-  std::vector<std::vector<int>> getResults();
+  Board getResults();
   // Solved board means only values that do not exist in the original board are included
   // Cells that initially contain values are set to zero.
-  std::vector<std::vector<int>> getSolvedBoard();
-  static void printBoard(const std::string& title, const std::vector<std::vector<int>>& board);
+  Board getSolvedBoard();
+  static void printBoard(const std::string& title, const Board& board);
 
 private:
   bool isPresentInCol(int col, int num);
@@ -22,6 +24,6 @@ private:
   bool findEmptyPlace(int& row, int& col);
   bool isValidPlace(int row, int col, int num);
 
-  std::vector<std::vector<int>> board_;
-  std::vector<std::vector<int>> originalBoard_;
+  Board board_;
+  Board originalBoard_;
 };

@@ -4,6 +4,7 @@
 #include <utility>
 
 #include <Windows.h>
+#include "Defs.h"
 
 class Player {
 public:
@@ -12,7 +13,9 @@ public:
   // board should only contain values that needs to be filled. Existing numbers should be
   // set to zero.
   // boardRect is the absolute coordinates of the board (relative to the whole desktop/monitor)
- void play(const std::vector<std::vector<int>>& board);
+  void playClassic(const std::vector<std::vector<int>>& board);
+
+  static void playIceBreaker(const Board& board, Board& iceBoard);
 
  private:
   // Click at absolute screen location (x, y)

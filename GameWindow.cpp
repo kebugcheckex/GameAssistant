@@ -69,16 +69,17 @@ cv::Mat GameWindow::getSnapshot() {
   texture->GetDesc(&desc);
   auto bytes = robmikh::common::uwp::CopyBytesFromTexture(texture);
   
-  cv::Mat window(desc.Height, desc.Width, CV_8UC4);
+  cv::Mat window(desc.Height, desc.Width, CV_8UC3);
 
   // For some reason initializing the Mat directly from bytes causes some mysterious errors
   // I have to manually fill the Mat
   int count = 0;
   for (unsigned int i = 0; i < desc.Height; i++) {
     for (unsigned int j = 0; j < desc.Width; j++) {
-      cv::Vec4b pixel{ bytes[count], bytes[count + 1], bytes[count + 2], bytes[count + 3] };
+        // Alpha channel is not needed
+      cv::Vec3b pixel{ bytes[count], bytes[count + 1], bytes[count + 2] };
       count += 4;
-      window.at<cv::Vec4b>(i, j) = pixel;
+      window.at<cv::Vec3b>(i, j) = pixel;
     }
   }
   return window;
