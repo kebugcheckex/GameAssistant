@@ -6,8 +6,11 @@
 
 DEFINE_string(fill_order, "rows?,cols?,blocks?",
               "Fill ? rows/cols/blocks, e.g. rows3 means fill 3 rows");
-
-bool Player::shouldStop_ = false;
+DEFINE_int32(play_interval, 3000,
+           "Time interval between automatic play actions");
+DEFINE_int32(
+    stop_after, 9,
+    "Stop playing after finishing certain number of rows/columns/blocks");
 
 Player::Player(const RECT& monitorRect, const RECT& boardRect) {
   screenWidth_ = monitorRect.right - monitorRect.left;
@@ -20,37 +23,26 @@ Player::Player(const RECT& monitorRect, const RECT& boardRect) {
 
 
 void Player::play(const std::vector<std::vector<int>>& board) {
-  HHOOK keyboardHook =
-      SetWindowsHookExA(WH_KEYBOARD_LL, Player::handleHotKey, NULL, 0);
-  if (keyboardHook == NULL) {
-    DWORD dw = GetLastError();
-    LOG(ERROR)
-        << "Failed to register keyboard hook. Hotkey is not available.\n";
-    LOG(ERROR) << "Error code " << dw << "\n";
-  }
-
   // Need to click in the window first to make sure it gets focus
   // And there is also an animation
   clickAt(boardRect_.left, boardRect_.top - 50);
   Sleep(3000);
-  for (int i = 0; i < 9; i++) {
+  // TODO there are probably better ways to implement different fill orders
+  for (int i = 0; i < FLAGS_stop_after; i++) {
     for (int j = 0; j < 9; j++) {
-      if (shouldStop_) {
-        LOG(INFO) << "Received notification to stop playing";
-        break;
-      }
-      if (board[i][j] == 0) {
-        continue;
-      }
-      fillAt(i, j, (char)board[i][j]);
-      Sleep(1000);
+      if (FLAGS_fill_order == "rows") {
+        if (board[i][j] == 0) {
+          continue;
+        }
+        fillAt(i, j, (char)board[i][j]);
+      } else if (FLAGS_fill_order == "cols") {
+        if (board[j][i] == 0) {
+          continue;
+        }
+        fillAt(j, i, (char)board[j][i]);
+      } 
+      Sleep(FLAGS_play_interval);
     }
-    if (shouldStop_) {
-      break;
-    }
-  }
-  if (keyboardHook != NULL) {
-    UnhookWindowsHookEx(keyboardHook);
   }
 }
 
@@ -84,20 +76,4 @@ void Player::fillAt(int row, int col, char value) {
   clickAt(x, y);
   Sleep(1000);
   pressKey('0' + value);
-}
-
-// static
-LRESULT CALLBACK Player::handleHotKey(int nCode, WPARAM wParam, LPARAM lParam) {
-  if (nCode == HC_ACTION) {
-    DLOG(INFO) << "Received hot key event";
-    if (wParam == WM_KEYUP) {
-      LPKBDLLHOOKSTRUCT data = (LPKBDLLHOOKSTRUCT)lParam;
-      DLOG(INFO) << "Key code is " << data->vkCode;
-      if (data->vkCode == VK_F1 || data->vkCode == VK_NUMPAD0) {
-        shouldStop_ = true;
-        DLOG(INFO) << "Stoping now!";
-      }
-    }
-  }
-  return CallNextHookEx(NULL, nCode, wParam, lParam);
 }

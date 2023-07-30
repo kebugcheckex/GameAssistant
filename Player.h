@@ -13,7 +13,6 @@ public:
   // set to zero.
   // boardRect is the absolute coordinates of the board (relative to the whole desktop/monitor)
  void play(const std::vector<std::vector<int>>& board);
-  static LRESULT CALLBACK handleHotKey(int nCode, WPARAM wParam, LPARAM lParam);
 
  private:
   // Click at absolute screen location (x, y)
@@ -23,6 +22,4 @@ public:
  
  int screenWidth_, screenHeight_, gridSize_;
  RECT boardRect_;
-
- static bool shouldStop_;
 };

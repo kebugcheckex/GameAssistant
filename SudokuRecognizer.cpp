@@ -11,8 +11,13 @@
 
 DECLARE_bool(debug);
 
+constexpr std::string_view kCvWindowName{"Auto Sudoku"};
+
 SudokuRecognizer::SudokuRecognizer() {
   _board = std::vector<std::vector<int>>(9, std::vector<int>(9, 0));
+  if (FLAGS_debug) {
+    cv::namedWindow(kCvWindowName.data());
+  }
 }
 
 void SudokuRecognizer::loadImage(cv::Mat image) {
@@ -150,6 +155,7 @@ bool SudokuRecognizer::recognize() {
   if (FLAGS_debug) {
     showImage(displayImage);
   }
+  ocr->End();
   return true;
 }
 

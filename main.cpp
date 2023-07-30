@@ -19,53 +19,33 @@ using namespace winrt;
 using namespace Windows::Foundation;
 using namespace Windows::Storage;
 
-constexpr std::string_view kCvWindowName{"Auto Sudoku"};
-
-typedef struct tagRecognizeButtonData {
-  std::shared_ptr<SudokuRecognizer> recognizer;
-  std::shared_ptr<GameWindow> gameWindow;
-} RecognizeButtonData;
-
-void handleRecognizeButtonClick(int state, void* userData) {
-  try {
-    auto data = (RecognizeButtonData*)userData;
-    auto image = data->gameWindow->getSnapshot();
-    data->recognizer->loadImage(image);
-    data->recognizer->recognize();
-  } catch (std::exception& ex) {
-    LOG(ERROR) << ex.what();
-  }
-}
-
-void handleAutoPlayButtonClick(int state, void* userData) {}
-
 int main(int argc, char* argv[]) {
 
   gflags::ParseCommandLineFlags(&argc, &argv, true);
   init_apartment();
 
-  auto recognizer = std::make_shared<SudokuRecognizer>();
-  auto gameWindow =std::make_shared < GameWindow>(FLAGS_dev_mode ? FLAGS_image_file_path
+  SudokuRecognizer recognizer;
+  GameWindow gameWindow(FLAGS_dev_mode ? FLAGS_image_file_path
                                        : kGameWindowName.data());
-  RecognizeButtonData* recognizeButtonData = nullptr;
-  recognizeButtonData->recognizer = recognizer;
-  recognizeButtonData->gameWindow = gameWindow;
-  cv::namedWindow(kCvWindowName.data());
-  cv::createButton("Recognize", handleRecognizeButtonClick, (void *)recognizeButtonData);
-  cv::createButton("Auto Play", handleAutoPlayButtonClick);
+  recognizer.loadImage(gameWindow.getSnapshot());
+  if (!recognizer.recognize()) {
+    LOG(ERROR) << "Failed to recognize borard";
+    return 1;
+  }
 
-  SudokuSolver solver(recognizer->getResults());
+  SudokuSolver solver(recognizer.getResults());
   solver.solve();
   auto board = solver.getResults();
 
-    //auto windowRect = gameWindow->getWindowRect();
-    //auto boardRect = recognizer->getBoardRect();
-    //boardRect.left += windowRect.left;
-    //boardRect.top += windowRect.top;
-    //boardRect.right += windowRect.left;
-    //boardRect.bottom += windowRect.top;
-    //Player player(gameWindow->getMonitorRect(), boardRect);
-    //player.play(solver.getSolvedBoard());
- 
+  if (FLAGS_automatic) {
+    auto windowRect = gameWindow.getWindowRect();
+    auto boardRect = recognizer.getBoardRect();
+    boardRect.left += windowRect.left;
+    boardRect.top += windowRect.top;
+    boardRect.right += windowRect.left;
+    boardRect.bottom += windowRect.top;
+    Player player(gameWindow.getMonitorRect(), boardRect);
+    player.play(solver.getSolvedBoard());
+  }
   return 0;
 }
