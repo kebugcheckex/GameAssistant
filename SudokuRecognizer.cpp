@@ -10,7 +10,6 @@
 #include <queue>
 #include <unordered_set>
 
-
 DECLARE_bool(debug);
 DECLARE_bool(dev_mode);
 
@@ -54,7 +53,7 @@ cv::Rect SudokuRecognizer::findBoard() {
       continue;
     }
 
-    LOG(INFO) << fmt::format("Line from ({}, {}) to ({}, {})\n", starting.x,
+    DLOG(INFO) << fmt::format("Line from ({}, {}) to ({}, {})\n", starting.x,
                              starting.y, ending.x, ending.y);
     linePoints.push_back(starting);
     linePoints.push_back(ending);
@@ -161,14 +160,18 @@ bool SudokuRecognizer::recognize() {
   return true;
 }
 
-Board SudokuRecognizer::getRecognizedBoard() { return recognizedBoard_; }
+Board SudokuRecognizer::getRecognizedBoard() {
+  if (recognizedBoard_.empty()) {
+    recognize();
+  }
+  return recognizedBoard_;
+}
 
 Board SudokuRecognizer::getIceBoard() { return iceBoard_; }
 
-
-// Note - the current "ice" images are taken from the game screenshot when the window size
-// is fixed to 1700x1700. Template matching may not work if the image scales. Need to use
-// things like SIFT
+// Note - the current "ice" images are taken from the game screenshot when the
+// window size is fixed to 1700x1700. Template matching may not work if the
+// image scales. Need to use things like SIFT
 bool SudokuRecognizer::recognizeIce() {
   cv::Mat boardImage;
   image_(cvBoardRect_).copyTo(boardImage);
@@ -179,12 +182,12 @@ bool SudokuRecognizer::recognizeIce() {
   for (int i = 1; i <= 3; i++) {
     std::stringstream ss;
     ss << "./images/ice" << i << ".png";
-    printf("Image name %s\n", ss.str().c_str());
-    cv::Mat iceImage = cv::imread(ss.str());;
+    cv::Mat iceImage = cv::imread(ss.str());
+    ;
     cv::Mat result;
 
-    // template matching is a bit slow, on slower hardware, we may need to downsample the image
-    // before doing template matching
+    // template matching is a bit slow, on slower hardware, we may need to
+    // downsample the image before doing template matching
     cv::matchTemplate(boardImage, iceImage, result, cv::TM_CCOEFF_NORMED);
     double threshold = 0.9;
     std::vector<cv::Point> locations;
@@ -192,9 +195,10 @@ bool SudokuRecognizer::recognizeIce() {
     for (const auto& point : locations) {
       auto x = point.x / 96, y = point.y / 96;
       if (FLAGS_debug) {
-        cv::rectangle(displayImage, point,
+        cv::rectangle(
+            displayImage, point,
             cv::Point(point.x + iceImage.cols, point.y + iceImage.rows),
-                      cv::Scalar(0, 0, 255), 2);
+            cv::Scalar(0, 0, 255), 2);
         std::stringstream ss;
         ss << "(" << x << ", " << y << ", " << i << ")";
         cv::putText(displayImage, ss.str(), point, cv::FONT_HERSHEY_SIMPLEX, 1,
@@ -210,7 +214,8 @@ bool SudokuRecognizer::recognizeIce() {
 RECT SudokuRecognizer::getBoardRect() { return boardRect_; }
 
 /* static */
-void SudokuRecognizer::showImage(const cv::Mat& image, const std::string& title) {
+void SudokuRecognizer::showImage(const cv::Mat& image,
+                                 const std::string& title) {
   if (FLAGS_debug || FLAGS_dev_mode) {
     cv::setWindowTitle(kCvWindowName.data(), title);
     cv::imshow(kCvWindowName.data(), image);

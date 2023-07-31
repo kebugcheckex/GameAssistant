@@ -7,14 +7,23 @@
 
 constexpr int kDimension = 9;
 
+// TODO maybe methods in this class should be refactored into static ones
 class SudokuSolver {
  public:
   SudokuSolver(Board board);
-  bool solve();
-  Board getResults();
-  // Solved board means only values that do not exist in the original board are
-  // included Cells that initially contain values are set to zero.
+
+  /*
+   * Completed board is the board with all cells filled with correct numbers
+   */
+  Board getCompletedBoard();
+
+  /*
+   * Solved board is the board that only contains new numbers filled while
+   * cells with existing numbers are set to 0
+   */
   Board getSolvedBoard();
+
+
   static void printBoard(const std::string& title, const Board& board);
 
  private:
@@ -23,6 +32,7 @@ class SudokuSolver {
   bool isPresentInBox(int boxStartRow, int boxStartCol, int num);
   bool findEmptyPlace(int& row, int& col);
   bool isValidPlace(int row, int col, int num);
+  bool solve();
 
   Board board_;
   Board originalBoard_;

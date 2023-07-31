@@ -77,9 +77,8 @@ bool SudokuSolver::solve() {
   return false;
 }
 
-Board SudokuSolver::getResults() {
+Board SudokuSolver::getCompletedBoard() {
   solve();
-  printBoard("Complete Board", board_);
   return board_;
 }
 

@@ -1,28 +1,37 @@
 #pragma once
 
-#include <vector>
-#include <utility>
-
 #include <Windows.h>
+
+#include <utility>
+#include <vector>
+
 #include "Defs.h"
+#include "GameWindow.h"
+#include "SudokuRecognizer.h"
+#include "SudokuSolver.h"
 
 class Player {
-public:
-  Player(const RECT& monitorRect, const RECT& boardRect);
+ public:
+  Player(std::shared_ptr<GameWindow> gameWindow,
+         std::shared_ptr<SudokuRecognizer> recognizer,
+         std::shared_ptr<SudokuSolver> solver, GameMode gameMode);
 
-  // board should only contain values that needs to be filled. Existing numbers should be
-  // set to zero.
-  // boardRect is the absolute coordinates of the board (relative to the whole desktop/monitor)
-  void playClassic(const std::vector<std::vector<int>>& board);
-
-  static void playIceBreaker(const Board& board, Board& iceBoard);
+  void play();
 
  private:
+  void playClassic();
+  void playIrregular();
+  void playIceBreaker();
+
   // Click at absolute screen location (x, y)
- void clickAt(int x, int y);
- void pressKey(char ch);  // TODO maybe extend this to other virtual key codes
- void fillAt(int row, int col, char value /* numerical value */);
- 
- int screenWidth_, screenHeight_, gridSize_;
- RECT boardRect_;
+  void clickAt(int x, int y);
+  void pressKey(char ch);  // TODO maybe extend this to other virtual key codes
+  void fillAt(int row, int col, char value /* numerical value */);
+
+  int screenWidth_, screenHeight_, gridSize_;
+  RECT boardRect_;
+  GameMode gameMode_;
+  std::shared_ptr<GameWindow> gameWindow_;
+  std::shared_ptr<SudokuRecognizer> recognizer_;
+  std::shared_ptr<SudokuSolver> solver_;
 };

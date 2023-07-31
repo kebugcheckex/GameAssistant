@@ -24,21 +24,52 @@ DEFINE_int32(
     stop_after, 9,
     "Stop playing after finishing certain number of rows/columns/blocks");
 
-Player::Player(const RECT& monitorRect, const RECT& boardRect) {
+Player::Player(std::shared_ptr<GameWindow> gameWindow,
+               std::shared_ptr<SudokuRecognizer> recognizer,
+               std::shared_ptr<SudokuSolver> solver, GameMode gameMode)
+    : gameWindow_(gameWindow),
+      recognizer_(recognizer),
+      solver_(solver),
+      gameMode_(gameMode) {
+  auto monitorRect = gameWindow_->getMonitorRect();
   screenWidth_ = monitorRect.right - monitorRect.left;
   screenHeight_ = monitorRect.bottom - monitorRect.top;
-  gridSize_ = (boardRect.right - boardRect.left) / 9;
-  boardRect_ = boardRect;
+
+  auto windowRect = gameWindow_->getWindowRect();
+  boardRect_ = recognizer_->getBoardRect();
+  boardRect_.left += windowRect.left;
+  boardRect_.top += windowRect.top;
+  boardRect_.right += windowRect.left;
+  boardRect_.bottom += windowRect.top;
   DLOG(INFO) << fmt::format("Board Rect: ({}, {}) -> ({}, {})\n",
-                            boardRect.left, boardRect.top, boardRect.right,
-                            boardRect.bottom);
+                            boardRect_.left, boardRect_.top, boardRect_.right,
+                            boardRect_.bottom);
+  gridSize_ = (boardRect_.right - boardRect_.left) / 9;
 }
 
-void Player::playClassic(const std::vector<std::vector<int>>& board) {
+void Player::play() {
+  switch (gameMode_) {
+    case GameMode::CLASSIC:
+      playClassic();
+      break;
+    case GameMode::IRREGULAR:
+      playIrregular();
+      break;
+    case GameMode::ICE_BREAKER:
+      playIceBreaker();
+      break;
+    default:
+      LOG(FATAL) << "Unknown game mode " << gameMode_;
+  }
+}
+
+void Player::playClassic() {
+  auto board = solver_->getSolvedBoard();
+
   // Need to click in the window first to make sure it gets focus
-  // And there is also an animation
   clickAt(boardRect_.left, boardRect_.top - 50);
-  Sleep(3000);
+  Sleep(3000);  // there is an animation before the screen settles
+
   // TODO there are probably better ways to implement different fill orders
   for (int i = 0; i < FLAGS_stop_after; i++) {
     for (int j = 0; j < 9; j++) {
@@ -58,17 +89,20 @@ void Player::playClassic(const std::vector<std::vector<int>>& board) {
   }
 }
 
-void Player::playIceBreaker(const Board& board, Board& iceBoard) {
-  SudokuSolver::printBoard("solved board", board);
-  SudokuSolver::printBoard("ice board", iceBoard);
+void Player::playIrregular() { throw std::runtime_error("Not Implemented"); }
+
+void Player::playIceBreaker() {
+  auto board = solver_->getSolvedBoard();
+  auto iceBoard = recognizer_->getIceBoard();
+  SudokuSolver::printBoard("Completed board", solver_->getCompletedBoard());
 
   // row, col, weight
-  std::vector<std::tuple<uint8_t, uint8_t, uint8_t>> iceLocations;
+  std::vector<std::tuple<int, int, int>> iceLocations;
 
   for (int i = 0; i < 9; i++) {
     for (int j = 0; j < 9; j++) {
       if (board[i][j] == 0) {
-        iceBoard[i][j] = -1;    // mark existing number locations
+        iceBoard[i][j] = -1;  // mark existing number locations
       }
       if (iceBoard[i][j] > 0) {
         iceLocations.push_back({i, j, iceBoard[i][j]});
@@ -76,8 +110,6 @@ void Player::playIceBreaker(const Board& board, Board& iceBoard) {
       }
     }
   }
-
-  SudokuSolver::printBoard("ice board adjusted", iceBoard);
 
   for (const auto& location : iceLocations) {
     auto row = std::get<0>(location);
@@ -96,8 +128,6 @@ void Player::playIceBreaker(const Board& board, Board& iceBoard) {
       iceBoard[i][col] += weight;
     }
   }
-
-  SudokuSolver::printBoard("final ice board", iceBoard);
 
   auto iceCellComparator = [](const IceBreakerCell left,
                               const IceBreakerCell right) {
