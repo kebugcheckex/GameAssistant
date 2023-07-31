@@ -25,13 +25,11 @@ SudokuRecognizer::SudokuRecognizer(GameMode gameMode): gameMode_(gameMode) {
 
 void SudokuRecognizer::loadImage(cv::Mat image) {
   image_ = image;
-  showImage(image, "original image");
 }
 
 cv::Rect SudokuRecognizer::findBoard() {
   cv::Mat edgesImage;
   cv::Canny(image_, edgesImage, 50 /* threshold1 */, 150 /* threshold2 */);
-  showImage(edgesImage, "edge image");
 
   std::vector<cv::Vec4i> lines;
   cv::HoughLinesP(edgesImage, lines, 2 /* rho */, CV_PI / 180 /* theta */,
@@ -84,6 +82,7 @@ cv::Rect SudokuRecognizer::findBoard() {
 }
 
 void SudokuRecognizer::removeBoundary(cv::Mat& image) {
+  showImage(image, "before removed boundary");
   std::unordered_set<int> scanned;
   std::queue<cv::Point> pending;
   pending.push(cv::Point(1, 1));
@@ -109,7 +108,7 @@ void SudokuRecognizer::removeBoundary(cv::Mat& image) {
     pending.push(cv::Point(x - 1, y));
     pending.push(cv::Point(x, y - 1));
   }
-  showImage(image, "removed boundary");
+  showImage(image, "after removed boundary");
 }
 
 bool SudokuRecognizer::recognize() {
@@ -118,7 +117,7 @@ bool SudokuRecognizer::recognize() {
   image_(rect).copyTo(boardImage);
   cv::Mat displayImage = boardImage.clone();
   cv::cvtColor(boardImage, boardImage, cv::COLOR_BGR2GRAY);
-  cv::threshold(boardImage, boardImage, 245, 255, cv::THRESH_BINARY);
+  cv::threshold(boardImage, boardImage, 250, 255, cv::THRESH_BINARY);
   std::unordered_set<int> scanned;
   removeBoundary(boardImage);
 
@@ -215,7 +214,6 @@ RECT SudokuRecognizer::getBoardRect() { return boardRect_; }
 
 /* static */
 void SudokuRecognizer::showImage(const cv::Mat& image, const std::string& title) {
-  return;
   if (FLAGS_debug || FLAGS_dev_mode) {
     cv::setWindowTitle(kCvWindowName.data(), title);
     cv::imshow(kCvWindowName.data(), image);

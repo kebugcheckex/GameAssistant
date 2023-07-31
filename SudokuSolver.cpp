@@ -42,8 +42,7 @@ bool SudokuSolver::isPresentInBox(int boxStartRow, int boxStartCol, int num) {
   return false;
 }
 
-bool SudokuSolver::findEmptyPlace(
-    int& row, int& col) {  // get empty location and update row and column
+bool SudokuSolver::findEmptyPlace(int& row, int& col) {
   for (row = 0; row < kDimension; row++) {
     for (col = 0; col < kDimension; col++) {
       if (board_[row][col] == 0) {
@@ -55,7 +54,6 @@ bool SudokuSolver::findEmptyPlace(
 }
 
 bool SudokuSolver::isValidPlace(int row, int col, int num) {
-  // when item not found in col, row and current 3x3 box
   auto valid = !isPresentInRow(row, num) && !isPresentInCol(col, num) &&
                !isPresentInBox(row - row % 3, col - col % 3, num);
   return valid;
@@ -66,13 +64,12 @@ bool SudokuSolver::solve() {
   if (!findEmptyPlace(row, col)) {
     return true;
   }
-  for (int num = 1; num <= 9; num++) {  // valid numbers are 1 - 9
-    if (isValidPlace(
-            row, col,
-            num)) {  // check validation, if yes, put the number in the grid
+  for (int num = 1; num <= 9; num++) {
+    if (isValidPlace(row, col, num)) {
       board_[row][col] = num;
-      if (solve())  // recursively go for other rooms in the grid
+      if (solve()) {
         return true;
+      }
       board_[row][col] =
           0;  // turn to unassigned space when conditions are not satisfied
     }
