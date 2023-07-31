@@ -42,28 +42,28 @@ int main(int argc, char* argv[]) {
   init_apartment();
 
   auto gameMode = GameModeMap.at(FLAGS_game_mode);;
-  SudokuRecognizer recognizer(gameMode);
-  GameWindow gameWindow(FLAGS_dev_mode ? FLAGS_image_file_path
-                                       : kGameWindowName.data());
-  recognizer.loadImage(gameWindow.getSnapshot());
+  auto gameWindow = std::make_shared<GameWindow>(
+      FLAGS_dev_mode ? FLAGS_image_file_path : kGameWindowName.data());
+  SudokuRecognizer recognizer(gameMode, gameWindow);
   if (!recognizer.recognize()) {
     LOG(ERROR) << "Failed to recognize borard";
     return 1;
   }
-  auto iceBoard = recognizer.recognizeIce();
-  SudokuSolver solver(recognizer.getResults());
+  auto iceBoard = recognizer.getIceBoard();
+
+  SudokuSolver solver(recognizer.getRecognizedBoard());
   solver.solve();
   auto board = solver.getSolvedBoard();
   Player::playIceBreaker(board, iceBoard);
 
   if (FLAGS_automatic) {
-    auto windowRect = gameWindow.getWindowRect();
+    auto windowRect = gameWindow->getWindowRect();
     auto boardRect = recognizer.getBoardRect();
     boardRect.left += windowRect.left;
     boardRect.top += windowRect.top;
     boardRect.right += windowRect.left;
     boardRect.bottom += windowRect.top;
-    Player player(gameWindow.getMonitorRect(), boardRect);
+    Player player(gameWindow->getMonitorRect(), boardRect);
     player.playIceBreaker(solver.getSolvedBoard(), iceBoard);
   }
   return 0;

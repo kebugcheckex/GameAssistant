@@ -118,8 +118,8 @@ void Player::playIceBreaker(const Board& board, Board& iceBoard) {
     auto& cell = cells.top();
     cells.pop();
     auto row = std::get<0>(cell), col = std::get<1>(cell);
-    printf("Place %d at (%d, %d) (weight = %d)\n", board[row][col], row,
-           col, std::get<2>(cell));
+    printf("Place %d at (%d, %d) (weight = %d)\n", board[row][col], row + 1,
+           col + 1, std::get<2>(cell));
   }
 }
 

@@ -16,15 +16,13 @@ DECLARE_bool(dev_mode);
 
 constexpr std::string_view kCvWindowName{"Auto Sudoku"};
 
-SudokuRecognizer::SudokuRecognizer(GameMode gameMode): gameMode_(gameMode) {
-  _board = Board(9, std::vector<int>(9, 0));
+SudokuRecognizer::SudokuRecognizer(GameMode gameMode,
+                                   std::shared_ptr<GameWindow> gameWindow)
+    : gameMode_(gameMode), gameWindow_(gameWindow) {
   if (FLAGS_debug) {
     cv::namedWindow(kCvWindowName.data());
   }
-}
-
-void SudokuRecognizer::loadImage(cv::Mat image) {
-  image_ = image;
+  image_ = gameWindow->getSnapshot();
 }
 
 cv::Rect SudokuRecognizer::findBoard() {
@@ -112,6 +110,7 @@ void SudokuRecognizer::removeBoundary(cv::Mat& image) {
 }
 
 bool SudokuRecognizer::recognize() {
+  recognizedBoard_ = Board(9, std::vector<int>(9, 0));
   auto rect = findBoard();
   cv::Mat boardImage;
   image_(rect).copyTo(boardImage);
@@ -140,7 +139,7 @@ bool SudokuRecognizer::recognize() {
       ocr->SetImage(block.data, block.cols, block.rows, 1, block.step);
       auto str = std::string(ocr->GetUTF8Text());
       if (str[0] >= '1' && str[0] <= '9') {
-        _board[j][i] = std::stoi(str);
+        recognizedBoard_[j][i] = std::stoi(str);
       } else {
         printf("Warning: could not recognize cell (%d, %d), result is %s\n", j,
                i, str.c_str());
@@ -155,22 +154,28 @@ bool SudokuRecognizer::recognize() {
   }
   showImage(displayImage, "OCR image");
   ocr->End();
+
+  if (gameMode_ == GameMode::ICE_BREAKER) {
+    recognizeIce();
+  }
   return true;
 }
 
-Board SudokuRecognizer::getResults() { return _board; }
+Board SudokuRecognizer::getRecognizedBoard() { return recognizedBoard_; }
+
+Board SudokuRecognizer::getIceBoard() { return iceBoard_; }
 
 
 // Note - the current "ice" images are taken from the game screenshot when the window size
 // is fixed to 1700x1700. Template matching may not work if the image scales. Need to use
 // things like SIFT
-Board SudokuRecognizer::recognizeIce() {
+bool SudokuRecognizer::recognizeIce() {
   cv::Mat boardImage;
   image_(cvBoardRect_).copyTo(boardImage);
   cv::Mat displayImage;
   image_(cvBoardRect_).copyTo(displayImage);
 
-  Board results(9, std::vector<int>(9, 0));
+  iceBoard_ = Board(9, std::vector<int>(9, 0));
   for (int i = 1; i <= 3; i++) {
     std::stringstream ss;
     ss << "./images/ice" << i << ".png";
@@ -195,19 +200,11 @@ Board SudokuRecognizer::recognizeIce() {
         cv::putText(displayImage, ss.str(), point, cv::FONT_HERSHEY_SIMPLEX, 1,
                     cv::Scalar(200, 0, 200), 2);
       }
-      results[y][x] = i;
+      iceBoard_[y][x] = i;
     }
   }
   showImage(displayImage, "ice locations");
-  return results;
-}
-
-void SudokuRecognizer::clearBoard() {
-  for (int i = 0; i < 9; i++) {
-    for (int j = 0; j < 9; j++) {
-      _board[i][j] = 0;
-    }
-  }
+  return true;
 }
 
 RECT SudokuRecognizer::getBoardRect() { return boardRect_; }
