@@ -41,10 +41,7 @@ int main(int argc, char* argv[]) {
   gflags::ParseCommandLineFlags(&argc, &argv, true);
   init_apartment();
 
-  auto gameMode = GameModeMap.at(FLAGS_game_mode);
-
-  // OpenCVPlayground::templateMatching();
-
+  auto gameMode = GameModeMap.at(FLAGS_game_mode);;
   SudokuRecognizer recognizer(gameMode);
   GameWindow gameWindow(FLAGS_dev_mode ? FLAGS_image_file_path
                                        : kGameWindowName.data());

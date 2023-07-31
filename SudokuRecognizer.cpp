@@ -156,7 +156,6 @@ bool SudokuRecognizer::recognize() {
   }
   showImage(displayImage, "OCR image");
   ocr->End();
-  auto ices = recognizeIce();
   return true;
 }
 
