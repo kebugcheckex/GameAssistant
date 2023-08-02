@@ -23,7 +23,6 @@ static bool validateGameMode(const char* flagName, const std::string& value) {
   return true;
 }
 
-DEFINE_bool(automatic, false, "Play the game automatically");
 DEFINE_bool(debug, false, "Debug mode, show intermediate step data");
 DEFINE_bool(multirun, false, "Do not exit after finishing one run");
 DEFINE_bool(dev_mode, false, "Load file from image instead of screenshot");

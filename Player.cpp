@@ -9,20 +9,20 @@
 #include "SudokuSolver.h"
 
 static bool validateFillOrder(const char* flagName, const std::string& value) {
-  if (value != "row" && value != "col") {
+  if (value != "row" && value != "col" && value != "row|col") {
     std::cerr << "Invalid value for --" << flagName << " " << value << "\n";
     return false;
   }
   return true;
 }
 
-DEFINE_string(fill_order, "row,col", "Fill by rows or columns");
-// DEFINE_validator(fill_order, &validateFillOrder);
+DEFINE_string(fill_order, "row|col", "Fill by rows or columns");
+DEFINE_validator(fill_order, &validateFillOrder);
 DEFINE_int32(play_interval, 3000,
              "Time interval between automatic play actions");
 DEFINE_int32(
     stop_after, 9,
-    "Stop playing after finishing certain number of rows/columns/blocks");
+    "Stop playing after finishing certain number of rows/columns");
 
 Player::Player(std::shared_ptr<GameWindow> gameWindow,
                std::shared_ptr<SudokuRecognizer> recognizer,
@@ -66,13 +66,17 @@ void Player::play() {
 void Player::playClassic() {
   auto board = solver_->getSolvedBoard();
   SudokuSolver::printBoard("Solved board", board);
+
+  if (FLAGS_fill_order != "row" && FLAGS_fill_order != "col") {
+    std::cerr << "No fill order specified. Will not auto play\n";
+    return;
+  }
+
+  std::cout << "Auto-play started.\n";
   // Need to click in the window first to make sure it gets focus
   clickAt(boardRect_.left, boardRect_.top - 50);
   Sleep(3000);  // there is an animation before the screen settles
 
-  if (FLAGS_fill_order != "row" && FLAGS_fill_order != "col") {
-    std::cerr << "No fill order specified. Will not auto play\n";
-  }
   for (int i = 0; i < FLAGS_stop_after; i++) {
     for (int j = 0; j < 9; j++) {
       if (FLAGS_fill_order == "row") {
@@ -89,6 +93,8 @@ void Player::playClassic() {
       Sleep(FLAGS_play_interval);
     }
   }
+
+  std::cout << "Auto-play completed.\n";
 }
 
 void Player::playIrregular() { throw std::runtime_error("Not Implemented"); }
@@ -112,8 +118,7 @@ void Player::playIceBreaker() {
             /* Only add weight to cells that are
             *  - not the current ice cell, and
             *  - not a cell with existing number (i.e. not on the solved board)
-            *  Same below
-            */
+            *  Same below */
             if (iceBoard[row][i] > 0 || solvedBoard[row][i] == 0) {
               continue;
             }
@@ -176,75 +181,14 @@ void Player::playIceBreaker() {
   }
   solvedBoard = solver_->getSolvedBoard();  // get a fresh copy as the previous
                                             // copy has been modified
+  clickAt(boardRect_.left, boardRect_.top - 50);
+  Sleep(3000);  // there is an animation before the screen settles
   for (const auto& step : steps) {
     auto [row, col] = step;
     printf("Place %d at (%d, %d)\n", solvedBoard[row][col], row + 1, col + 1);
+    fillAt(row, col, (char)solvedBoard[row][col]);
   }
-}
-
-std::pair<int, int> Player::findNextIceBreakerLocation(
-    const Board& iceBoard, const Board& weightBoard) {
-  int maxWeight = std::numeric_limits<int>::min();
-  std::pair<int, int> location;
-  for (int i = 0; i < 9; i++) {
-    for (int j = 0; j < 9; j++) {
-      auto weight = weightBoard[i][j];
-      if (weight > 0 && weight > maxWeight) {
-        maxWeight = weight;
-        location.first = i;
-        location.second = j;
-      }
-    }
-  }
-  return location;
-}
-
-bool Player::updateIceBoard(Board& iceBoard,
-                            const std::pair<int, int>& location) {
-  const auto [row, col] = location;
-  DCHECK_LE(iceBoard[row][col],
-            0);  // make sure the location is not on an ice cell
-  bool foundIce = false;
-  for (int i = 0; i < 9; i++) {
-    if (iceBoard[row][i] > 0) {
-      foundIce = true;
-      iceBoard[row][i]--;
-    }
-    if (iceBoard[i][col] > 0) {
-      foundIce = true;
-      iceBoard[i][col]--;
-    }
-  }
-  return foundIce;
-}
-
-void Player::updateWeightBoard(Board& weightBoard, const Board& iceBoard,
-                               const Board& solvedBoard) {
-  // For each ice cell, add the ice weight to all its row and column cells,
-  // except the ice cell itself
-  for (int row = 0; row < 9; row++) {
-    for (int col = 0; col < 9; col++) {
-      if (iceBoard[row][col] > 0) {
-        for (int i = 0; i < 9; i++) {
-          if (i == col || weightBoard[row][i] < 0) {
-            continue;
-          }
-          weightBoard[row][i] += iceBoard[row][col];
-        }
-        for (int i = 0; i < 9; i++) {
-          if (i == row || weightBoard[i][col] < 0) {
-            continue;
-          }
-          weightBoard[i][col] += iceBoard[row][col];
-        }
-      }
-    }
-  }
-}
-void Player::playIceBreakerNew() {
-  auto board = solver_->getSolvedBoard();
-  auto iceBoard = recognizer_->getIceBoard();
-  SudokuSolver::printBoard("Completed board", solver_->getCompletedBoard());
+  std::cout << "Auto-play completed.\n";
 }
 
 void Player::clickAt(int x, int y) {
@@ -277,4 +221,5 @@ void Player::fillAt(int row, int col, char value) {
   clickAt(x, y);
   Sleep(1000);
   pressKey('0' + value);
+  Sleep(FLAGS_play_interval);
 }
