@@ -65,12 +65,14 @@ void Player::play() {
 
 void Player::playClassic() {
   auto board = solver_->getSolvedBoard();
-
+  SudokuSolver::printBoard("Solved board", board);
   // Need to click in the window first to make sure it gets focus
   clickAt(boardRect_.left, boardRect_.top - 50);
   Sleep(3000);  // there is an animation before the screen settles
 
-  // TODO there are probably better ways to implement different fill orders
+  if (FLAGS_fill_order != "row" && FLAGS_fill_order != "col") {
+    std::cerr << "No fill order specified. Will not auto play\n";
+  }
   for (int i = 0; i < FLAGS_stop_after; i++) {
     for (int j = 0; j < 9; j++) {
       if (FLAGS_fill_order == "row") {
@@ -92,65 +94,157 @@ void Player::playClassic() {
 void Player::playIrregular() { throw std::runtime_error("Not Implemented"); }
 
 void Player::playIceBreaker() {
+  auto solvedBoard = solver_->getSolvedBoard();
+  SudokuSolver::printBoard("Completed board", solver_->getCompletedBoard());
+
+  auto iceBoard = recognizer_->getIceBoard();
+
+  std::vector<std::pair<int, int>> steps;
+
+  while (true) {
+    Board weightBoard(9, std::vector<int>(9, 0));
+    // For each ice cell, add the ice weight to all its row and column cells,
+    // except the ice cell itself
+    for (int row = 0; row < 9; row++) {
+      for (int col = 0; col < 9; col++) {
+        if (iceBoard[row][col] > 0) {
+          for (int i = 0; i < 9; i++) {
+            /* Only add weight to cells that are
+            *  - not the current ice cell, and
+            *  - not a cell with existing number (i.e. not on the solved board)
+            *  Same below
+            */
+            if (iceBoard[row][i] > 0 || solvedBoard[row][i] == 0) {
+              continue;
+            }
+            weightBoard[row][i] += iceBoard[row][col];
+          }
+          for (int i = 0; i < 9; i++) {
+            if (iceBoard[i][col] > 0 || solvedBoard[i][col] == 0) {
+              continue;
+            }
+            weightBoard[i][col] += iceBoard[row][col];
+          }
+        }
+      }
+    }
+
+    int maxWeight = std::numeric_limits<int>::min();
+    int maxRow = -1, maxCol = -1;
+    for (int i = 0; i < 9; i++) {
+      for (int j = 0; j < 9; j++) {
+        auto weight = weightBoard[i][j];
+        if (weight > 0 && weight > maxWeight) {
+          maxWeight = weight;
+          maxRow = i;
+          maxCol = j;
+        }
+      }
+    }
+    // make sure the location is not on an ice cell
+    DCHECK_LE(iceBoard[maxRow][maxCol], 0);
+    steps.push_back({maxRow, maxCol});
+    
+    // once a number is placed, remove it from solved board
+    solvedBoard[maxRow][maxCol] = 0;
+    
+    for (int i = 0; i < 9; i++) {
+      if (iceBoard[maxRow][i] > 0) {
+        iceBoard[maxRow][i]--;
+      }
+      if (iceBoard[i][maxCol] > 0) {
+        iceBoard[i][maxCol]--;
+      }
+    }
+
+    bool foundIce = false;
+    for (int i = 0; i < 9; i++) {
+      for (int j = 0; j < 9; j++) {
+        if (iceBoard[i][j] > 0) {
+          foundIce = true;
+          break;
+        }
+      }
+      if (foundIce) {
+        break;
+      }
+    }
+
+    if (!foundIce) {
+      break;  // no more ice cells
+    }
+  }
+  solvedBoard = solver_->getSolvedBoard();  // get a fresh copy as the previous
+                                            // copy has been modified
+  for (const auto& step : steps) {
+    auto [row, col] = step;
+    printf("Place %d at (%d, %d)\n", solvedBoard[row][col], row + 1, col + 1);
+  }
+}
+
+std::pair<int, int> Player::findNextIceBreakerLocation(
+    const Board& iceBoard, const Board& weightBoard) {
+  int maxWeight = std::numeric_limits<int>::min();
+  std::pair<int, int> location;
+  for (int i = 0; i < 9; i++) {
+    for (int j = 0; j < 9; j++) {
+      auto weight = weightBoard[i][j];
+      if (weight > 0 && weight > maxWeight) {
+        maxWeight = weight;
+        location.first = i;
+        location.second = j;
+      }
+    }
+  }
+  return location;
+}
+
+bool Player::updateIceBoard(Board& iceBoard,
+                            const std::pair<int, int>& location) {
+  const auto [row, col] = location;
+  DCHECK_LE(iceBoard[row][col],
+            0);  // make sure the location is not on an ice cell
+  bool foundIce = false;
+  for (int i = 0; i < 9; i++) {
+    if (iceBoard[row][i] > 0) {
+      foundIce = true;
+      iceBoard[row][i]--;
+    }
+    if (iceBoard[i][col] > 0) {
+      foundIce = true;
+      iceBoard[i][col]--;
+    }
+  }
+  return foundIce;
+}
+
+void Player::updateWeightBoard(Board& weightBoard, const Board& iceBoard,
+                               const Board& solvedBoard) {
+  // For each ice cell, add the ice weight to all its row and column cells,
+  // except the ice cell itself
+  for (int row = 0; row < 9; row++) {
+    for (int col = 0; col < 9; col++) {
+      if (iceBoard[row][col] > 0) {
+        for (int i = 0; i < 9; i++) {
+          if (i == col || weightBoard[row][i] < 0) {
+            continue;
+          }
+          weightBoard[row][i] += iceBoard[row][col];
+        }
+        for (int i = 0; i < 9; i++) {
+          if (i == row || weightBoard[i][col] < 0) {
+            continue;
+          }
+          weightBoard[i][col] += iceBoard[row][col];
+        }
+      }
+    }
+  }
+}
+void Player::playIceBreakerNew() {
   auto board = solver_->getSolvedBoard();
   auto iceBoard = recognizer_->getIceBoard();
   SudokuSolver::printBoard("Completed board", solver_->getCompletedBoard());
-
-  // row, col, weight
-  std::vector<std::tuple<int, int, int>> iceLocations;
-
-  for (int i = 0; i < 9; i++) {
-    for (int j = 0; j < 9; j++) {
-      if (board[i][j] == 0) {
-        iceBoard[i][j] = -1;  // mark existing number locations
-      }
-      if (iceBoard[i][j] > 0) {
-        iceLocations.push_back({i, j, iceBoard[i][j]});
-        iceBoard[i][j] = -1;  // mark ice locations
-      }
-    }
-  }
-
-  for (const auto& location : iceLocations) {
-    auto row = std::get<0>(location);
-    auto col = std::get<1>(location);
-    auto weight = std::get<2>(location);
-    for (int i = 0; i < 9; i++) {
-      if (iceBoard[row][i] < 0 || i == col) {
-        continue;
-      }
-      iceBoard[row][i] += weight;
-    }
-    for (int i = 0; i < 9; i++) {
-      if (iceBoard[i][col] < 0 || i == row) {
-        continue;
-      }
-      iceBoard[i][col] += weight;
-    }
-  }
-
-  auto iceCellComparator = [](const IceBreakerCell left,
-                              const IceBreakerCell right) {
-    return std::get<2>(left) < std::get<2>(right);
-  };
-  std::priority_queue<IceBreakerCell, std::vector<IceBreakerCell>,
-                      decltype(iceCellComparator)>
-      cells(iceCellComparator);
-  for (int i = 0; i < 9; i++) {
-    for (int j = 0; j < 9; j++) {
-      if (iceBoard[i][j] > 0) {
-        cells.push(std::make_tuple(i, j, iceBoard[i][j]));
-      }
-    }
-  }
-
-  while (!cells.empty()) {
-    auto& cell = cells.top();
-    cells.pop();
-    auto row = std::get<0>(cell), col = std::get<1>(cell);
-    printf("Place %d at (%d, %d) (weight = %d)\n", board[row][col], row + 1,
-           col + 1, std::get<2>(cell));
-  }
 }
 
 void Player::clickAt(int x, int y) {

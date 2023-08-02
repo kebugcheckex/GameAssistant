@@ -5,6 +5,7 @@
 */
 
 #include "pch.h"
+#include <fmt/core.h>
 #include "SudokuSolver.h"
 
 SudokuSolver::SudokuSolver(Board board) {
@@ -97,15 +98,26 @@ Board SudokuSolver::getSolvedBoard() {
 
 /* static */
 void SudokuSolver::printBoard(const std::string& title, const Board& board) {
+    // TODO fix a few issues here and write unit tests
   constexpr std::string_view kHorizontalLine = "-------------------------\n";
   std::cout << "====================\n";
   std::cout << title << "\n";
   std::cout << "====================\n";
   std::cout << kHorizontalLine;
+  std::vector<int> columnWidths(9, 1);
+
+  for (int col = 0; col < 9; col++) {
+    for (int row = 0; row < 9; row++) {
+      if (board[row][col] == -1) {
+        columnWidths[col] = 2;
+        break;
+      }
+    }
+  }
   for (int i = 0; i < 9; i++) {
     std::cout << "| ";
     for (int j = 0; j < 9; j++) {
-      std::cout << board[i][j] << " ";
+      std::cout << fmt::format("{0: {1}} ", board[i][j], columnWidths[j]);
       if (j % 3 == 2) {
         std::cout << "| ";
       }
