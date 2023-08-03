@@ -42,9 +42,10 @@ int main(int argc, char* argv[]) {
   auto gameWindow = std::make_shared<GameWindow>(
       FLAGS_dev_mode ? FLAGS_image_file_path : kGameWindowName.data());
   auto recognizer = std::make_shared<SudokuRecognizer>(gameMode, gameWindow);
-  auto solver =
+  auto result = recognizer->recognize();
+  /*auto solver =
       std::make_shared<SudokuSolver>(recognizer->getRecognizedBoard());
   Player player(gameWindow, recognizer, solver, gameMode);
-  player.play();
+  player.play();*/
   return 0;
 }

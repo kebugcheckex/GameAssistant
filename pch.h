@@ -7,6 +7,8 @@
 #include <future>
 #include <sstream>
 
+#include <fmt/core.h>
+
 #include <Windows.h>
 
 #include <winrt/Windows.Foundation.h>

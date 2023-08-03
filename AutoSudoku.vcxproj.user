@@ -5,7 +5,7 @@
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Dev|x64'">
-    <LocalDebuggerCommandArguments> --game-mode icebreaker</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments> --game-mode irregular --debug --dev-mode --image-file-path .\images\Irregular1.png</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">

@@ -22,17 +22,8 @@ class Player {
   void playClassic();
   void playIrregular();
   void playIceBreaker();
-  void playIceBreakerNew();
-  
-  std::pair<int, int> findNextIceBreakerLocation(const Board& iceBoard,
-                                  const Board& weightBoard);
 
-  // returns false if no more ice present
-  bool updateIceBoard(Board& iceBoard, const std::pair<int, int>& location);
-  
-  void updateWeightBoard(Board& weightBoard, const Board& iceBoard,
-                         const Board& solvedBoard);
-
+  // TODO move the following functions to GameWindow class
   // Click at absolute screen location (x, y)
   void clickAt(int x, int y);
   void pressKey(char ch);  // TODO maybe extend this to other virtual key codes

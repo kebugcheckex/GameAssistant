@@ -1,14 +1,18 @@
 #include "pch.h"
+
 #include "SudokuRecognizer.h"
 
-#include <fmt/core.h>
 #include <glog/logging.h>
 #include <tesseract/baseapi.h>
 
+#include <algorithm>
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
 #include <queue>
+#include <random>
 #include <unordered_set>
+
+#include "RecognizerUtils.h"
 
 DECLARE_bool(debug);
 DECLARE_bool(dev_mode);
@@ -32,6 +36,14 @@ cv::Rect SudokuRecognizer::findBoard() {
   cv::HoughLinesP(edgesImage, lines, 2 /* rho */, CV_PI / 180 /* theta */,
                   80 /* threshold */, 500 /* minLineLength  */,
                   2 /* maxLineGap */);
+  if (FLAGS_debug) {
+    for (const auto& line : lines) {
+      cv::Point startPoint(line[0], line[1]);
+      cv::Point endPoint(line[2], line[3]);
+      cv::line(image_, startPoint, endPoint, cv::Scalar(0, 0, 255), 2);
+    }
+  }
+
   std::vector<cv::Point> linePoints;
   for (const auto& line : lines) {
     cv::Point starting, ending;
@@ -54,13 +66,14 @@ cv::Rect SudokuRecognizer::findBoard() {
     }
 
     DLOG(INFO) << fmt::format("Line from ({}, {}) to ({}, {})\n", starting.x,
-                             starting.y, ending.x, ending.y);
+                              starting.y, ending.x, ending.y);
     linePoints.push_back(starting);
     linePoints.push_back(ending);
   }
-  if (linePoints.size() != 8) {
-    throw std::runtime_error("Failed to find the board area");
-  }
+
+  // if (linePoints.size() != 8) {
+  //   throw std::runtime_error("Failed to find the board area");
+  // }
 
   std::sort(linePoints.begin(), linePoints.end(),
             [](cv::Point a, cv::Point b) { return a.x <= b.x && a.y <= b.y; });
@@ -109,6 +122,16 @@ void SudokuRecognizer::removeBoundary(cv::Mat& image) {
 }
 
 bool SudokuRecognizer::recognize() {
+  switch (gameMode_) {
+    case GameMode::CLASSIC:
+    case GameMode::ICE_BREAKER:
+      return recognizeClassic();
+    case GameMode::IRREGULAR:
+      return recognizeIrreguluar();
+  }
+}
+
+bool SudokuRecognizer::recognizeClassic() {
   recognizedBoard_ = Board(9, std::vector<int>(9, 0));
   auto rect = findBoard();
   cv::Mat boardImage;
@@ -158,6 +181,63 @@ bool SudokuRecognizer::recognize() {
     recognizeIce();
   }
   return true;
+}
+
+bool SudokuRecognizer::recognizeIrreguluar() {
+  cv::Mat croppedImage = image_.clone();
+  // image_(cv::Rect(0, 350, 960, 940)).copyTo(croppedImage);
+  cv::Mat grayImage;
+  cv::cvtColor(croppedImage, grayImage, cv::COLOR_BGR2GRAY);
+  cv::Mat binaryImage;
+  cv::threshold(grayImage, binaryImage, 128, 255, cv::THRESH_BINARY);
+  // cv::Canny(binaryImage, binaryImage, 0 /* threshold1 */,
+  //           150 /* threshold2 */);
+  showImage(binaryImage, "binary image");
+  std::vector<std::vector<cv::Point>> contours;
+  std::vector<cv::Vec4i> hierachy;
+  cv::findContours(binaryImage, contours, hierachy, cv::RETR_LIST,
+                   cv::CHAIN_APPROX_SIMPLE);
+
+  // Find the board
+  std::vector<Contour> result;
+  std::copy_if(contours.begin(), contours.end(), std::back_inserter(result),
+               [](const Contour& contour) {
+                 auto area = cv::contourArea(contour);
+                 return area > 757000 && area < 828000;
+               });
+  cv::drawContours(image_, result, -1, cv::Scalar(0, 0, 255), 2);
+  showImage(image_, "result");
+
+  // TODO
+  // 1. move the above logic to findBoard and also record the offset from the
+  // original image
+  // 2. design a data structure to store irregular blocks
+  // 3. find those irregular blocks
+
+  // for (int i = 0; i < contours.size(); i++) {
+  //   const auto& contour = contours[i];
+  //   if (contour.size() > 18) {
+  //     continue;
+  //   }
+  //   cv::Mat displayImage = croppedImage.clone();
+  //   std::cout << fmt::format("Contour #{}: size = {}\n", i, contour.size());
+  //   cv::drawContours(displayImage, contours, i, cv::Scalar(0, 255, 0), 2);
+  //   for (int j = 0; j < contour.size(); j++) {
+  //     cv::circle(displayImage, contour[j], 10, cv::Scalar(0, 0, 255), 2);
+  //   }
+  //   showImage(displayImage, "contours");
+  // }
+  return true;
+}
+
+/* static */
+cv::Scalar SudokuRecognizer::generateRandomColor() {
+  std::random_device randomDevice;
+  std::mt19937 generator(randomDevice());
+  std::uniform_int_distribution<int> distribution(0, 255);
+
+  return cv::Scalar(distribution(generator), distribution(generator),
+                    distribution(generator));
 }
 
 Board SudokuRecognizer::getRecognizedBoard() {

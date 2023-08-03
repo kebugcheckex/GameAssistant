@@ -1,0 +1,7 @@
+# Visual Studio generated .clang-format file
+
+BasedOnStyle: Google
+
+IncludeCategories:
+  - Regex: '"pch\.h"'
+    Priority: -1000
