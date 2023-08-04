@@ -135,7 +135,7 @@
     <ClInclude Include="Player.h" />
     <ClInclude Include="RecognizerUtils.h" />
     <ClInclude Include="SudokuRecognizer.h" />
-    <ClInclude Include="SudokuSolver.h" />
+    <ClInclude Include="SudokuBoard.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CaptureSnapshot.cpp" />
@@ -148,7 +148,7 @@
     <ClCompile Include="Player.cpp" />
     <ClCompile Include="RecognizerUtils.cpp" />
     <ClCompile Include="SudokuRecognizer.cpp" />
-    <ClCompile Include="SudokuSolver.cpp" />
+    <ClCompile Include="SudokuBoard.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include=".clang-format" />

@@ -5,8 +5,7 @@
 #include "OpenCVPlayground.h"
 #include "Player.h"
 #include "SudokuRecognizer.h"
-#include "SudokuSolver.h"
-#include "glog/logging.h"
+#include "SudokuBoard.h"
 
 static std::unordered_map<std::string, GameMode> const GameModeMap = {
     {"classic", GameMode::CLASSIC},
@@ -37,14 +36,14 @@ using namespace Windows::Storage;
 int main(int argc, char* argv[]) {
   gflags::ParseCommandLineFlags(&argc, &argv, true);
   init_apartment();
+  google::InitGoogleLogging(argv[0]);
 
   auto gameMode = GameModeMap.at(FLAGS_game_mode);
   auto gameWindow = std::make_shared<GameWindow>(
       FLAGS_dev_mode ? FLAGS_image_file_path : kGameWindowName.data());
   auto recognizer = std::make_shared<SudokuRecognizer>(gameMode, gameWindow);
   auto result = recognizer->recognize();
-  auto solver =
-      std::make_shared<SudokuSolver>(recognizer->getRecognizedBoard());
+  auto solver = std::make_shared<SudokuBoard>(recognizer->getRecognizedBoard());
   Player player(gameWindow, recognizer, solver, gameMode);
   player.play();
   return 0;

@@ -8,13 +8,13 @@
 #include "Defs.h"
 #include "GameWindow.h"
 #include "SudokuRecognizer.h"
-#include "SudokuSolver.h"
+#include "SudokuBoard.h"
 
 class Player {
  public:
   Player(std::shared_ptr<GameWindow> gameWindow,
          std::shared_ptr<SudokuRecognizer> recognizer,
-         std::shared_ptr<SudokuSolver> solver, GameMode gameMode);
+         std::shared_ptr<SudokuBoard> solver, GameMode gameMode);
 
   void play();
 
@@ -34,5 +34,5 @@ class Player {
   GameMode gameMode_;
   std::shared_ptr<GameWindow> gameWindow_;
   std::shared_ptr<SudokuRecognizer> recognizer_;
-  std::shared_ptr<SudokuSolver> solver_;
+  std::shared_ptr<SudokuBoard> solver_;
 };

@@ -7,10 +7,9 @@
 
 constexpr int kDimension = 9;
 
-// TODO maybe methods in this class should be refactored into static ones
-class SudokuSolver {
+class SudokuBoard {
  public:
-  SudokuSolver(Board board);
+  SudokuBoard(Board board);
 
   /*
    * Completed board is the board with all cells filled with correct numbers

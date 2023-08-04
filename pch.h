@@ -1,7 +1,5 @@
 ﻿#pragma once
 
-#define GLOG_NO_ABBREVIATED_SEVERITIES
-
 #include <codecvt>
 #include <iostream>
 #include <future>
@@ -21,6 +19,8 @@
 #include <wil/resource.h>
 
 #include <gflags/gflags.h>
+
+#define GLOG_NO_ABBREVIATED_SEVERITIES
 #include <glog/logging.h>
 
 #include "robmikh.common/d3dHelpers.h"

@@ -18,7 +18,7 @@
     <ClInclude Include="pch.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="SudokuSolver.h">
+    <ClInclude Include="SudokuBoard.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="SudokuRecognizer.h">
@@ -50,7 +50,7 @@
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="SudokuSolver.cpp">
+    <ClCompile Include="SudokuBoard.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="SudokuRecognizer.cpp">

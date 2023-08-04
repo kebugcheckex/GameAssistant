@@ -6,15 +6,15 @@
 
 #include "pch.h"
 #include <fmt/core.h>
-#include "SudokuSolver.h"
+#include "SudokuBoard.h"
 
-SudokuSolver::SudokuSolver(Board board) {
+SudokuBoard::SudokuBoard(Board board) {
   board_ = board;
   originalBoard_ = board;
   printBoard("Original Board", originalBoard_);
 }
 
-bool SudokuSolver::isPresentInCol(int col, int num) {
+bool SudokuBoard::isPresentInCol(int col, int num) {
   for (int row = 0; row < kDimension; row++) {
     if (board_[row][col] == num) {
       return true;
@@ -23,7 +23,7 @@ bool SudokuSolver::isPresentInCol(int col, int num) {
   return false;
 }
 
-bool SudokuSolver::isPresentInRow(int row, int num) {
+bool SudokuBoard::isPresentInRow(int row, int num) {
   for (int col = 0; col < kDimension; col++) {
     if (board_[row][col] == num) {
       return true;
@@ -32,7 +32,7 @@ bool SudokuSolver::isPresentInRow(int row, int num) {
   return false;
 }
 
-bool SudokuSolver::isPresentInBox(int boxStartRow, int boxStartCol, int num) {
+bool SudokuBoard::isPresentInBox(int boxStartRow, int boxStartCol, int num) {
   for (int row = 0; row < 3; row++) {
     for (int col = 0; col < 3; col++) {
       if (board_[row + boxStartRow][col + boxStartCol] == num) {
@@ -43,7 +43,7 @@ bool SudokuSolver::isPresentInBox(int boxStartRow, int boxStartCol, int num) {
   return false;
 }
 
-bool SudokuSolver::findEmptyPlace(int& row, int& col) {
+bool SudokuBoard::findEmptyPlace(int& row, int& col) {
   for (row = 0; row < kDimension; row++) {
     for (col = 0; col < kDimension; col++) {
       if (board_[row][col] == 0) {
@@ -54,13 +54,13 @@ bool SudokuSolver::findEmptyPlace(int& row, int& col) {
   return false;
 }
 
-bool SudokuSolver::isValidPlace(int row, int col, int num) {
+bool SudokuBoard::isValidPlace(int row, int col, int num) {
   auto valid = !isPresentInRow(row, num) && !isPresentInCol(col, num) &&
                !isPresentInBox(row - row % 3, col - col % 3, num);
   return valid;
 }
 
-bool SudokuSolver::solve() {
+bool SudokuBoard::solve() {
   int row, col;
   if (!findEmptyPlace(row, col)) {
     return true;
@@ -78,12 +78,12 @@ bool SudokuSolver::solve() {
   return false;
 }
 
-Board SudokuSolver::getCompletedBoard() {
+Board SudokuBoard::getCompletedBoard() {
   solve();
   return board_;
 }
 
-Board SudokuSolver::getSolvedBoard() {
+Board SudokuBoard::getSolvedBoard() {
   solve();
   Board solvedBoard = board_;
   for (int i = 0; i < kDimension; i++) {
@@ -97,7 +97,7 @@ Board SudokuSolver::getSolvedBoard() {
 }
 
 /* static */
-void SudokuSolver::printBoard(const std::string& title, const Board& board) {
+void SudokuBoard::printBoard(const std::string& title, const Board& board) {
     // TODO fix a few issues here and write unit tests
   constexpr std::string_view kHorizontalLine = "-------------------------\n";
   std::cout << "====================\n";
