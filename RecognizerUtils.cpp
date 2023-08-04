@@ -2,19 +2,24 @@
 
 #include "RecognizerUtils.h"
 
+#include <fmt/core.h>
+
 #include <opencv2/imgproc.hpp>
 
 #include "Defs.h"
 
 // static
-double RecognizerUtils::calculateAngle(cv::Point vertex, cv::Point side1,
+double RecognizerUtils::calculateCosineAngle(cv::Point vertex, cv::Point side1,
                                        cv::Point side2) {
+  /*
+  * \cos(\theta) = \frac{\mathbf{a}\mathbf{b}}{\lvert\mathbf{a}\rvert\lvert\mathbf{b}\rvert}
+  */
   double dx1 = side1.x - vertex.x;
   double dy1 = side1.y - vertex.y;
   double dx2 = side2.x - vertex.x;
   double dy2 = side2.y - vertex.y;
   return (dx1 * dx2 + dy1 * dy2) /
-         sqrt((dx1 * dx1 + dy1 * dy1) * (dx2 * dx2 + dy2 * dy2) + 1e-10);
+         std::sqrt((dx1 * dx1 + dy1 * dy1) * (dx2 * dx2 + dy2 * dy2) + 1e-10);
 }
 
 // static
@@ -24,13 +29,13 @@ std::vector<cv::Rect> RecognizerUtils::findRectangles(
   bool isRectangle = true;
   for (const auto& contour : contours) {
     std::vector<cv::Point> approx;
-    cv::approxPolyDP(contour, approx, cv::arcLength(contour, true) * 0.02,
-                     true);
+    cv::approxPolyDP(contour, approx, cv::arcLength(contour, /* closed */ true) * 0.02,
+                     /* closed */ true);
     if (approx.size() != 4) {
       continue;
     }
     for (int i = 0; i < 4; i++) {
-      auto angle = calculateAngle(contour[(i + 1) % 4], contour[i],
+      auto angle = calculateCosineAngle(contour[(i + 1) % 4], contour[i],
                                   contour[(i + 2) % 4]);
       if (fabs(angle - 90. > EPS)) {
         isRectangle = false;
@@ -48,6 +53,39 @@ std::vector<cv::Rect> RecognizerUtils::findRectangles(
     });
   }
   return rectangles;
+}
+
+// static
+bool RecognizerUtils::isRectangle(const Contour& contour,
+    bool rotated) {
+  if (contour.size() != 4) {
+    return false;
+  }
+  if (rotated) {
+    for (int i = 0; i < 4; i++) {
+      auto cosineAngle = calculateCosineAngle(contour[(i + 1) % 4], contour[i],
+                                              contour[(i + 2) % 4]);
+      if (cosineAngle > 0.1) { // about 6 degrees error margin
+        return false;
+      }
+    }
+    return true;
+  } else {
+    // TODO figure out the best way to check if the rectangle is vertical or horizontal
+    return true;
+  }
+}
+
+// static
+cv::Rect RecognizerUtils::convertContourToRect(const Contour& contour) {
+  DCHECK_EQ(contour.size(), 4);
+  auto vertices = contour;
+  std::sort(vertices.begin(), vertices.end(),
+            [](const cv::Point& a, const cv::Point& b) {
+              return a.x <= b.x && a.y <= b.y;
+            });
+  // TODO this is flawed, doesn't work for rotated rectangles
+  return cv::Rect(vertices[0], vertices[3]);
 }
 
 // static

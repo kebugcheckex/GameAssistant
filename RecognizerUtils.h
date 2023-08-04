@@ -6,9 +6,9 @@
 class RecognizerUtils {
  public:
   /*
-   * Calculate the angle of two vectors
+   * Calculate the cosine value of the angble between two vectors
    */
-  static double calculateAngle(cv::Point vertex, cv::Point side1,
+  static double calculateCosineAngle(cv::Point vertex, cv::Point side1,
                                cv::Point side2);
 
   /*
@@ -18,6 +18,16 @@ class RecognizerUtils {
   static std::vector<cv::Rect> findRectangles(
       const std::vector<Contour>& contours,
       bool sortByAreaDesc = false);
+
+  /*
+   * Check if the given contour is a rectangle. A rectangle must have four and
+   * only four vertices. The four vertices must be ordered either clockwise or
+   * counter-clockwise direction.
+   * TODO rotated not implemented yet
+   */
+  static bool isRectangle(const Contour& contour, bool rotated = false);
+
+  static cv::Rect convertContourToRect(const Contour& contour);
 
   static void printCvRect(const cv::Rect& rect);
 };

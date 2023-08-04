@@ -21,6 +21,7 @@
 #include <wil/resource.h>
 
 #include <gflags/gflags.h>
+#include <glog/logging.h>
 
 #include "robmikh.common/d3dHelpers.h"
 #include "robmikh.common/d3dHelpers.desktop.h"

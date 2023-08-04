@@ -2,7 +2,6 @@
 
 #include "SudokuRecognizer.h"
 
-#include <glog/logging.h>
 #include <tesseract/baseapi.h>
 
 #include <algorithm>
@@ -28,67 +27,65 @@ SudokuRecognizer::SudokuRecognizer(GameMode gameMode,
   image_ = gameWindow->getSnapshot();
 }
 
-cv::Rect SudokuRecognizer::findBoard() {
-  cv::Mat edgesImage;
-  cv::Canny(image_, edgesImage, 50 /* threshold1 */, 150 /* threshold2 */);
-
-  std::vector<cv::Vec4i> lines;
-  cv::HoughLinesP(edgesImage, lines, 2 /* rho */, CV_PI / 180 /* theta */,
-                  80 /* threshold */, 500 /* minLineLength  */,
-                  2 /* maxLineGap */);
-  if (FLAGS_debug) {
-    for (const auto& line : lines) {
-      cv::Point startPoint(line[0], line[1]);
-      cv::Point endPoint(line[2], line[3]);
-      cv::line(image_, startPoint, endPoint, cv::Scalar(0, 0, 255), 2);
+void SudokuRecognizer::findBoardInWindow() {
+  cv::Mat image = image_.clone();
+  cv::cvtColor(image, image, cv::COLOR_BGR2GRAY);
+  cv::threshold(image, image, /* thresh */ 128, /* maxval */ 255,
+                cv::THRESH_BINARY);
+  std::vector<Contour> contours;
+  std::vector<cv::Vec4i> hierachy;
+  cv::findContours(image, contours, hierachy, cv::RETR_LIST,
+                   cv::CHAIN_APPROX_SIMPLE);
+  std::vector<Contour> rectangles;
+  for (const auto& contour : contours) {
+    Contour approximation;
+    cv::approxPolyDP(contour, approximation,
+                     cv::arcLength(contour, /* closed */ true) * 0.02,
+                     /* closed */ true);
+    if (RecognizerUtils::isRectangle(approximation)) {
+      rectangles.push_back(approximation);
     }
   }
 
-  std::vector<cv::Point> linePoints;
-  for (const auto& line : lines) {
-    cv::Point starting, ending;
-    if (line[0] <= line[2] && line[1] <= line[3]) {
-      starting.x = line[0];
-      starting.y = line[1];
-      ending.x = line[2];
-      ending.y = line[3];
-    } else {
-      starting.x = line[2];
-      starting.y = line[3];
-      ending.x = line[0];
-      ending.y = line[1];
-    }
-    if (starting.x < 50 || starting.y < 50 || ending.x > image_.cols - 50 ||
-        starting.y < 300) {
-      // exclude lines found outside the board area
-      // TODO this depends on the window size, need to use relative locations
-      continue;
-    }
+  // using area to find the board is probably accurate enough and using
+  // approxPolyDP and checking for rectangle above is likely unnecessary
+  auto boardContour = std::find_if(rectangles.begin(), rectangles.end(),
+                                   [](const Contour& contour) {
+                                     auto area = cv::contourArea(contour);
+                                     // TODO these magic number actually depends
+                                     // on the window size, currently hard-coded
+                                     // to 1700x1700 in GameWindow.cpp
+                                     return area > 757000 && area < 828000;
+                                   });
+  // the edges of the board countour may not be horizontal/vertical
+  // these four lines is a workaround to make them horizontal/vertical
+  //boardContour->at(1).y = boardContour->at(0).y;
+  //boardContour->at(3).x = boardContour->at(0).x;
+  //boardContour->at(2).x = boardContour->at(1).x;
+  //boardContour->at(2).y = boardContour->at(3).y;
 
-    DLOG(INFO) << fmt::format("Line from ({}, {}) to ({}, {})\n", starting.x,
-                              starting.y, ending.x, ending.y);
-    linePoints.push_back(starting);
-    linePoints.push_back(ending);
-  }
+  cvBoardRect_.x = boardContour->at(0).x;
+  cvBoardRect_.y = boardContour->at(0).y;
+  cvBoardRect_.width = boardContour->at(1).x - boardContour->at(0).x;
+  cvBoardRect_.height = boardContour->at(3).y - boardContour->at(0).y;
+  RecognizerUtils::printCvRect(cvBoardRect_);
 
-  // if (linePoints.size() != 8) {
-  //   throw std::runtime_error("Failed to find the board area");
-  // }
+ /* DCHECK_GT(cvBoardRect_.area(), 757000);
+  DCHECK_LT(cvBoardRect_.area(), 828000);*/
 
-  std::sort(linePoints.begin(), linePoints.end(),
-            [](cv::Point a, cv::Point b) { return a.x <= b.x && a.y <= b.y; });
-  boardRect_.left = linePoints[0].x;
-  boardRect_.top = linePoints[0].y;
-  boardRect_.right = linePoints[7].x;
-  boardRect_.bottom = linePoints[7].y;
-
-  cvBoardRect_ = cv::Rect(linePoints[0], linePoints[7]);
   if (FLAGS_debug) {
     cv::Mat displayImage = image_.clone();
+    std::vector<Contour> contoursForDrawing{*boardContour};
     cv::rectangle(displayImage, cvBoardRect_, cv::Scalar(0, 0, 255), 2);
-    showImage(displayImage, "board rect");
+
+    for (int i = 0; i < boardContour->size(); i++) {
+      const auto& point = boardContour->at(i);
+      cv::circle(displayImage, point, 10, cv::Scalar(255, 0, 0), 2);
+      cv::putText(displayImage, std::to_string(i), point,
+                  cv::FONT_HERSHEY_SIMPLEX, 1.f, cv::Scalar(0, 0, 255), 2);
+    }
+    showImage(displayImage, "BoardRect");
   }
-  return cvBoardRect_;
 }
 
 void SudokuRecognizer::removeBoundary(cv::Mat& image) {
@@ -133,9 +130,10 @@ bool SudokuRecognizer::recognize() {
 
 bool SudokuRecognizer::recognizeClassic() {
   recognizedBoard_ = Board(9, std::vector<int>(9, 0));
-  auto rect = findBoard();
+  findBoardInWindow();
+
   cv::Mat boardImage;
-  image_(rect).copyTo(boardImage);
+  image_(cvBoardRect_).copyTo(boardImage);
   cv::Mat displayImage = boardImage.clone();
   cv::cvtColor(boardImage, boardImage, cv::COLOR_BGR2GRAY);
   cv::threshold(boardImage, boardImage, 250, 255, cv::THRESH_BINARY);
@@ -162,9 +160,6 @@ bool SudokuRecognizer::recognizeClassic() {
       auto str = std::string(ocr->GetUTF8Text());
       if (str[0] >= '1' && str[0] <= '9') {
         recognizedBoard_[j][i] = std::stoi(str);
-      } else {
-        printf("Warning: could not recognize cell (%d, %d), result is %s\n", j,
-               i, str.c_str());
       }
       if (FLAGS_debug) {
         cv::rectangle(displayImage, blockBoundary, cv::Scalar(255, 0, 0));
@@ -184,6 +179,8 @@ bool SudokuRecognizer::recognizeClassic() {
 }
 
 bool SudokuRecognizer::recognizeIrreguluar() {
+  findBoardInWindow();
+  return true;
   cv::Mat croppedImage = image_.clone();
   // image_(cv::Rect(0, 350, 960, 940)).copyTo(croppedImage);
   cv::Mat grayImage;
@@ -291,7 +288,14 @@ bool SudokuRecognizer::recognizeIce() {
   return true;
 }
 
-RECT SudokuRecognizer::getBoardRect() { return boardRect_; }
+RECT SudokuRecognizer::getBoardRect() {
+  RECT rect{};
+  rect.left = cvBoardRect_.x;
+  rect.top = cvBoardRect_.y;
+  rect.right = cvBoardRect_.x + cvBoardRect_.width;
+  rect.bottom = cvBoardRect_.y + cvBoardRect_.height;
+  return rect;
+}
 
 /* static */
 void SudokuRecognizer::showImage(const cv::Mat& image,

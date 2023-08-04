@@ -90,7 +90,6 @@ void Player::playClassic() {
         }
         fillAt(j, i, (char)board[j][i]);
       }
-      Sleep(FLAGS_play_interval);
     }
   }
 

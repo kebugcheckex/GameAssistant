@@ -29,20 +29,17 @@ class SudokuRecognizer {
   static void showImage(const cv::Mat& image, const std::string& title);
   // util functions
   static cv::Scalar generateRandomColor();
-  static std::vector<cv::Rect> findRectangles(
-      const std::vector<std::vector<cv::Point>>& contours);
 
  private:
   bool recognizeIrreguluar();
   bool recognizeClassic();
-  cv::Rect findBoard();
+  void findBoardInWindow();
   void removeBoundary(cv::Mat& image);
   bool recognizeIce();
 
   
   cv::Mat image_;
   Board recognizedBoard_, iceBoard_;
-  RECT boardRect_;
   cv::Rect cvBoardRect_;
   GameMode gameMode_;
   std::shared_ptr<GameWindow> gameWindow_;
