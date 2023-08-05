@@ -1,11 +1,12 @@
 ﻿#include "pch.h"
+
 #include <opencv2/highgui.hpp>
 
 #include "GameWindow.h"
 #include "OpenCVPlayground.h"
 #include "Player.h"
-#include "SudokuRecognizer.h"
 #include "SudokuBoard.h"
+#include "SudokuRecognizer.h"
 
 static std::unordered_map<std::string, GameMode> const GameModeMap = {
     {"classic", GameMode::CLASSIC},
@@ -38,14 +39,18 @@ int main(int argc, char* argv[]) {
   init_apartment();
   google::InitGoogleLogging(argv[0]);
 
-  DOUBLE_FOR_LOOP { std::cout << fmt::format("({}, {})\n", i, j); }
-  //auto gameMode = GameModeMap.at(FLAGS_game_mode);
-  //auto gameWindow = std::make_shared<GameWindow>(
-  //    FLAGS_dev_mode ? FLAGS_image_file_path : kGameWindowName.data());
-  //auto recognizer = std::make_shared<SudokuRecognizer>(gameMode, gameWindow);
-  //auto result = recognizer->recognize();
-  //auto solver = std::make_shared<SudokuBoard>(recognizer->getRecognizedBoard());
-  //Player player(gameWindow, recognizer, solver, gameMode);
-  //player.play();
+  auto gameMode = GameModeMap.at(FLAGS_game_mode);
+  auto gameWindow = std::make_shared<GameWindow>(
+      FLAGS_dev_mode ? FLAGS_image_file_path : kGameWindowName.data());
+  auto recognizer = std::make_shared<SudokuRecognizer>(gameMode, gameWindow);
+  if (!recognizer->recognize()) {
+    LOG(ERROR) << "failed to recognize board";
+    return 0;
+  }
+  auto sudokuBoard = std::make_shared<SudokuBoard>(
+      recognizer->getRecognizedBoard(), recognizer->getBlocks());
+  SudokuBoard::printBoard("debug", sudokuBoard->getCompletedBoard());
+  Player player(gameWindow, recognizer, sudokuBoard, gameMode);
+  player.play();
   return 0;
 }

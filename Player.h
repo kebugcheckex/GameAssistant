@@ -19,8 +19,7 @@ class Player {
   void play();
 
  private:
-  void playClassic();
-  void playIrregular();
+  void playNormalBoard();
   void playIceBreaker();
 
   // TODO move the following functions to GameWindow class

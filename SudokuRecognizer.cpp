@@ -12,11 +12,27 @@
 #include <unordered_set>
 
 #include "RecognizerUtils.h"
+#include "SudokuBoard.h"
+
+// Debug parameters --game-mode irregular --dev-mode --debug --image-file-path
+// .\images\Irregular1.png
 
 DECLARE_bool(debug);
 DECLARE_bool(dev_mode);
 
 constexpr std::string_view kCvWindowName{"Auto Sudoku"};
+
+const std::vector<cv::Scalar> kDebugColors{
+    {255, 0, 0},    // Red
+    {0, 255, 0},    // Green
+    {0, 0, 255},    // Blue
+    {255, 255, 0},  // Yellow
+    {0, 255, 255},  // Cyan
+    {255, 0, 255},  // Magenta
+    {128, 0, 128},  // Purple
+    {255, 165, 0},  // Orange
+    {0, 128, 128},  // Teal
+};
 
 SudokuRecognizer::SudokuRecognizer(GameMode gameMode,
                                    std::shared_ptr<GameWindow> gameWindow)
@@ -57,12 +73,6 @@ void SudokuRecognizer::findBoardInWindow() {
                                      // to 1700x1700 in GameWindow.cpp
                                      return area > 757000 && area < 828000;
                                    });
-  // the edges of the board countour may not be horizontal/vertical
-  // these four lines is a workaround to make them horizontal/vertical
-  //boardContour->at(1).y = boardContour->at(0).y;
-  //boardContour->at(3).x = boardContour->at(0).x;
-  //boardContour->at(2).x = boardContour->at(1).x;
-  //boardContour->at(2).y = boardContour->at(3).y;
 
   cvBoardRect_.x = boardContour->at(0).x;
   cvBoardRect_.y = boardContour->at(0).y;
@@ -70,8 +80,8 @@ void SudokuRecognizer::findBoardInWindow() {
   cvBoardRect_.height = boardContour->at(3).y - boardContour->at(0).y;
   RecognizerUtils::printCvRect(cvBoardRect_);
 
- /* DCHECK_GT(cvBoardRect_.area(), 757000);
-  DCHECK_LT(cvBoardRect_.area(), 828000);*/
+  DCHECK_GT(cvBoardRect_.area(), 757000);
+  DCHECK_LT(cvBoardRect_.area(), 828000);
 
   if (FLAGS_debug) {
     cv::Mat displayImage = image_.clone();
@@ -89,6 +99,7 @@ void SudokuRecognizer::findBoardInWindow() {
 }
 
 void SudokuRecognizer::removeBoundary(cv::Mat& image) {
+  // TODO maybe use dilate function is easier
   showImage(image, "before removed boundary");
   std::unordered_set<int> scanned;
   std::queue<cv::Point> pending;
@@ -125,6 +136,9 @@ bool SudokuRecognizer::recognize() {
       return recognizeClassic();
     case GameMode::IRREGULAR:
       return recognizeIrreguluar();
+    default:
+      LOG(ERROR) << "Unknown game mode " << gameMode_;
+      return false;
   }
 }
 
@@ -132,12 +146,12 @@ bool SudokuRecognizer::recognizeClassic() {
   recognizedBoard_ = Board(9, std::vector<int>(9, 0));
   findBoardInWindow();
 
-  cv::Mat boardImage;
-  image_(cvBoardRect_).copyTo(boardImage);
+  cv::Mat boardImage = image_(cvBoardRect_).clone();
   cv::Mat displayImage = boardImage.clone();
+
   cv::cvtColor(boardImage, boardImage, cv::COLOR_BGR2GRAY);
-  cv::threshold(boardImage, boardImage, 250, 255, cv::THRESH_BINARY);
-  std::unordered_set<int> scanned;
+  cv::threshold(boardImage, boardImage, /* thresh */ 130, /* maxval */ 255,
+                cv::THRESH_BINARY);
   removeBoundary(boardImage);
 
   // offset the thick boundaries by minus 1
@@ -150,80 +164,99 @@ bool SudokuRecognizer::recognizeClassic() {
 
   constexpr int kBoundaryOffset = 7;
   cv::Mat block;
-  for (int i = 0; i < 9; i++) {
-    for (int j = 0; j < 9; j++) {
-      cv::Rect blockBoundary(blockSize * i + kBoundaryOffset,
-                             blockSize * j + kBoundaryOffset, blockSize,
-                             blockSize);
-      boardImage(blockBoundary).copyTo(block);
-      ocr->SetImage(block.data, block.cols, block.rows, 1, block.step);
-      auto str = std::string(ocr->GetUTF8Text());
-      if (str[0] >= '1' && str[0] <= '9') {
-        recognizedBoard_[j][i] = std::stoi(str);
-      }
-      if (FLAGS_debug) {
-        cv::rectangle(displayImage, blockBoundary, cv::Scalar(255, 0, 0));
-        cv::putText(displayImage, str.substr(0, 1),
-                    cv::Point(blockSize * i + 30, blockSize * j + 30),
-                    cv::FONT_HERSHEY_SIMPLEX, 1.f, cv::Scalar(0, 0, 255), 2);
-      }
+  DOUBLE_FOR_LOOP {
+    cv::Rect blockBoundary(blockSize * i + kBoundaryOffset,
+                           blockSize * j + kBoundaryOffset, blockSize,
+                           blockSize);
+    boardImage(blockBoundary).copyTo(block);
+    ocr->SetImage(block.data, block.cols, block.rows, 1, block.step);
+    auto str = std::string(ocr->GetUTF8Text());
+    if (str[0] >= '1' && str[0] <= '9') {
+      recognizedBoard_[j][i] = std::stoi(str);
+    }
+    if (FLAGS_debug) {
+      cv::rectangle(displayImage, blockBoundary, cv::Scalar(255, 0, 0));
+      cv::putText(displayImage, str.substr(0, 1),
+                  cv::Point(blockSize * i + 30, blockSize * j + 30),
+                  cv::FONT_HERSHEY_SIMPLEX, 1.f, cv::Scalar(0, 0, 255), 2);
     }
   }
   showImage(displayImage, "OCR image");
   ocr->End();
-
-  if (gameMode_ == GameMode::ICE_BREAKER) {
-    recognizeIce();
-  }
   return true;
 }
 
 bool SudokuRecognizer::recognizeIrreguluar() {
   findBoardInWindow();
-  return true;
-  cv::Mat croppedImage = image_.clone();
-  // image_(cv::Rect(0, 350, 960, 940)).copyTo(croppedImage);
-  cv::Mat grayImage;
-  cv::cvtColor(croppedImage, grayImage, cv::COLOR_BGR2GRAY);
-  cv::Mat binaryImage;
-  cv::threshold(grayImage, binaryImage, 128, 255, cv::THRESH_BINARY);
-  // cv::Canny(binaryImage, binaryImage, 0 /* threshold1 */,
-  //           150 /* threshold2 */);
-  showImage(binaryImage, "binary image");
+  recognizeClassic();
+  cv::Mat boardImage = image_(cvBoardRect_).clone();
+  cv::cvtColor(boardImage, boardImage, cv::COLOR_BGR2GRAY);
+  cv::threshold(boardImage, boardImage, 128, 255, cv::THRESH_BINARY);
+  showImage(boardImage, "binary image");
   std::vector<std::vector<cv::Point>> contours;
   std::vector<cv::Vec4i> hierachy;
-  cv::findContours(binaryImage, contours, hierachy, cv::RETR_LIST,
+  cv::findContours(boardImage, contours, hierachy, cv::RETR_LIST,
                    cv::CHAIN_APPROX_SIMPLE);
 
-  // Find the board
-  std::vector<Contour> result;
-  std::copy_if(contours.begin(), contours.end(), std::back_inserter(result),
-               [](const Contour& contour) {
+  // The area of a block is the total area of 9 cells. Excluding 10% for the
+  // boundary area
+  auto blockArea = cvBoardRect_.area() * 0.9 / kDimension;
+  std::vector<Contour> blockContours;
+  std::copy_if(contours.begin(), contours.end(),
+               std::back_inserter(blockContours),
+               [blockArea](const Contour& contour) {
                  auto area = cv::contourArea(contour);
-                 return area > 757000 && area < 828000;
+                 // add 5% error margin
+                 return area > blockArea * 0.95 && area < blockArea * 1.05;
                });
-  cv::drawContours(image_, result, -1, cv::Scalar(0, 0, 255), 2);
-  showImage(image_, "result");
+  if (blockContours.size() != 9) {
+    LOG(ERROR) << fmt::format(
+        "Failed to find the correct number of block contours. Actual number "
+        "of contours found: {}\n",
+        blockContours.size());
+    return false;
+  }
+  cv::Mat displayImage = image_(cvBoardRect_).clone();
+  cv::drawContours(displayImage, blockContours, -1, cv::Scalar(0, 0, 255), 2);
+  showImage(displayImage, "Blocks");
 
-  // TODO
-  // 1. move the above logic to findBoard and also record the offset from the
-  // original image
-  // 2. design a data structure to store irregular blocks
-  // 3. find those irregular blocks
+  int cellWidth = (int)(cvBoardRect_.width / 9);
+  int cellHeight = (int)(cvBoardRect_.height / 9);
 
-  // for (int i = 0; i < contours.size(); i++) {
-  //   const auto& contour = contours[i];
-  //   if (contour.size() > 18) {
-  //     continue;
-  //   }
-  //   cv::Mat displayImage = croppedImage.clone();
-  //   std::cout << fmt::format("Contour #{}: size = {}\n", i, contour.size());
-  //   cv::drawContours(displayImage, contours, i, cv::Scalar(0, 255, 0), 2);
-  //   for (int j = 0; j < contour.size(); j++) {
-  //     cv::circle(displayImage, contour[j], 10, cv::Scalar(0, 0, 255), 2);
-  //   }
-  //   showImage(displayImage, "contours");
-  // }
+  blocks_.resize(kDimension);
+  DOUBLE_FOR_LOOP {
+    cv::Point2f cellCenter(i * cellHeight + cellHeight / 2.f,
+                           j * cellWidth + cellWidth / 2.f);
+    bool foundBlock = false;
+    int blockId = -1;
+    for (int k = 0; k < blockContours.size(); k++) {
+      if (cv::pointPolygonTest(blockContours[k], cellCenter, false) > 0.f) {
+        blocks_[k].insert(SudokuBoard::convertCoordinateToIndex(j, i));
+        foundBlock = true;
+        blockId = k;
+        break;
+      }
+    }
+    if (!foundBlock) {
+      LOG(ERROR) << fmt::format(
+          "failed to find which block that cell ({}, {}) belongs to, cell "
+          "center is at ({}, {})",
+          i, j, cellCenter.x, cellCenter.y);
+      return false;
+    }
+    cv::circle(displayImage, cellCenter, 10, kDebugColors[blockId], cv::FILLED);
+  }
+  showImage(displayImage, "Blocks with cell center");
+
+  DLOG(INFO) << "===== Blocks Data =====";
+  for (const auto& block : blocks_) {
+    std::ostringstream oss;
+    for (const int index : block) {
+      auto [row, col] = SudokuBoard::convertIndexToCoordinate(index);
+      oss << fmt::format("({}, {}), ", row, col);
+    }
+    DLOG(INFO) << oss.str();
+  }
   return true;
 }
 
@@ -243,6 +276,8 @@ Board SudokuRecognizer::getRecognizedBoard() {
   }
   return recognizedBoard_;
 }
+
+Blocks SudokuRecognizer::getBlocks() { return blocks_; }
 
 Board SudokuRecognizer::getIceBoard() { return iceBoard_; }
 

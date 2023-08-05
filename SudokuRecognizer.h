@@ -19,6 +19,12 @@ class SudokuRecognizer {
   Board getRecognizedBoard();
 
   /*
+   * Get the blocks layout. For irregular mode only. Otherwise returns an empty
+   * vector.
+   */
+  Blocks getBlocks();
+
+  /*
    * Ice Board is a 2D vector where non-zero values reporesents ice in that
    * location The value of the cell means how "hard" the ice is, i.e. how many
    * times it takes to eliminate the ice.
@@ -42,5 +48,6 @@ class SudokuRecognizer {
   Board recognizedBoard_, iceBoard_;
   cv::Rect cvBoardRect_;
   GameMode gameMode_;
+  Blocks blocks_;
   std::shared_ptr<GameWindow> gameWindow_;
 };

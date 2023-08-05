@@ -48,10 +48,8 @@ Player::Player(std::shared_ptr<GameWindow> gameWindow,
 void Player::play() {
   switch (gameMode_) {
     case GameMode::CLASSIC:
-      playClassic();
-      break;
     case GameMode::IRREGULAR:
-      playIrregular();
+      playNormalBoard();
       break;
     case GameMode::ICE_BREAKER:
       playIceBreaker();
@@ -61,7 +59,8 @@ void Player::play() {
   }
 }
 
-void Player::playClassic() {
+// TODO irregular board need a separate logic for fill N blocks
+void Player::playNormalBoard() {
   auto board = solver_->getSolvedBoard();
   SudokuBoard::printBoard("Solved board", board);
 
@@ -92,8 +91,6 @@ void Player::playClassic() {
   }
   LOG(INFO) << "Auto-play completed";
 }
-
-void Player::playIrregular() { throw std::runtime_error("Not Implemented"); }
 
 void Player::playIceBreaker() {
   auto solvedBoard = solver_->getSolvedBoard();

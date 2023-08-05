@@ -6,18 +6,8 @@
 
 #include "Defs.h"
 
-// unused
-struct int_pair_hash {
-  std::size_t operator()(const std::pair<int, int>& p) const {
-    auto hash1 = std::hash<int>{}(p.first);
-    auto hash2 = std::hash<int>{}(p.second);
-    // Given that the pair is the grid coordinate, the following calculation
-    // should be good enough
-    return hash1 * 10 + hash2;
-  }
-};
-
-
+constexpr std::string_view kBlocksSymbols{"+-*=@#$%&"};
+constexpr std::string_view kHorizontalLine = "-------------------------\n";
 
 class SudokuBoard {
  public:
@@ -40,7 +30,9 @@ class SudokuBoard {
   Board getSolvedBoard();
 
   // Utility functions
+  // TODO change the order of the two params
   static void printBoard(const std::string& title, const Board& board);
+  static void printBlocks(const Blocks& blocks, const std::string& title = "");
 
   /*
    * Convert a coordinate (row, col) into the 1D index representation
@@ -58,7 +50,6 @@ class SudokuBoard {
   bool isPresentInCol(int col, int num);
   bool isPresentInRow(int row, int num);
   bool isPresentInBlock(int row, int col, int num);
-  bool isPresentInBox(int boxStartRow, int boxStartCol, int num);
   bool findEmptyPlace(int& row, int& col);
   bool isValidPlace(int row, int col, int num);
   bool solve();

@@ -21,6 +21,7 @@ SudokuBoard::SudokuBoard(const Board& initialBoard, const Blocks& blocks)
       blocks_[blockId].insert(coord);
     }
   }
+  printBlocks(blocks_, "debug111");
   blocksMap_ = createBlocksMap(blocks_);
 }
 
@@ -37,17 +38,6 @@ bool SudokuBoard::isPresentInRow(int row, int num) {
   for (int col = 0; col < kDimension; col++) {
     if (board_[row][col] == num) {
       return true;
-    }
-  }
-  return false;
-}
-
-bool SudokuBoard::isPresentInBox(int boxStartRow, int boxStartCol, int num) {
-  for (int row = 0; row < 3; row++) {
-    for (int col = 0; col < 3; col++) {
-      if (board_[row + boxStartRow][col + boxStartCol] == num) {
-        return true;
-      }
     }
   }
   return false;
@@ -91,15 +81,17 @@ bool SudokuBoard::solve() {
       if (solve()) {
         return true;
       }
-      board_[row][col] =
-          0;  // turn to unassigned space when conditions are not satisfied
+      board_[row][col] = 0;
     }
   }
   return false;
 }
 
 Board SudokuBoard::getCompletedBoard() {
-  solve();
+  if (!solve()) {
+    LOG(ERROR) << "failed to solve the board";
+    printBoard("Initial Board", initialBoard_);
+  }
   return board_;
 }
 
@@ -116,14 +108,16 @@ Board SudokuBoard::getSolvedBoard() {
   return solvedBoard;
 }
 
-/* static */
+// static
 void SudokuBoard::printBoard(const std::string& title, const Board& board) {
   // TODO fix a few issues here and write unit tests
-  constexpr std::string_view kHorizontalLine = "-------------------------\n";
   std::cout << "====================\n";
   std::cout << title << "\n";
   std::cout << "====================\n";
-  std::cout << kHorizontalLine;
+  if (board.empty()) {
+    std::cout << "Board is empty!\n";
+    return;
+  }
   std::vector<int> columnWidths(9, 1);
 
   for (int col = 0; col < 9; col++) {
@@ -134,10 +128,37 @@ void SudokuBoard::printBoard(const std::string& title, const Board& board) {
       }
     }
   }
+  std::cout << kHorizontalLine;
   for (int i = 0; i < 9; i++) {
     std::cout << "| ";
     for (int j = 0; j < 9; j++) {
       std::cout << fmt::format("{0:{1}} ", board[i][j], columnWidths[j]);
+      if (j % 3 == 2) {
+        std::cout << "| ";
+      }
+    }
+    std::cout << "\n";
+    if (i % 3 == 2) {
+      std::cout << kHorizontalLine;
+    }
+  }
+  std::cout << "\n";
+}
+
+// static
+void SudokuBoard::printBlocks(const Blocks& blocks,
+                              const std::string& title) {
+  std::cout << "====================\n";
+  std::cout << "Blocks: " << title << "\n";
+  std::cout << "====================\n";
+  auto blocksMap = createBlocksMap(blocks);
+
+  std::cout << kHorizontalLine;
+  for (int i = 0; i < kDimension; i++) {
+    std::cout << "| ";
+    for (int j = 0; j < kDimension; j++) {
+      int blockId = blocksMap[convertCoordinateToIndex(i, j)];
+      std::cout << kBlocksSymbols.at(blockId) << " ";
       if (j % 3 == 2) {
         std::cout << "| ";
       }
