@@ -7,6 +7,7 @@
 #include "pch.h"
 
 #include "SudokuBoard.h"
+#include <fmt/core.h>
 
 SudokuBoard::SudokuBoard(const Board& initialBoard, const Blocks& blocks)
     : board_(initialBoard), initialBoard_(initialBoard), blocks_(blocks) {
