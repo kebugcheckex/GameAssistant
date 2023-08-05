@@ -38,13 +38,14 @@ int main(int argc, char* argv[]) {
   init_apartment();
   google::InitGoogleLogging(argv[0]);
 
-  auto gameMode = GameModeMap.at(FLAGS_game_mode);
-  auto gameWindow = std::make_shared<GameWindow>(
-      FLAGS_dev_mode ? FLAGS_image_file_path : kGameWindowName.data());
-  auto recognizer = std::make_shared<SudokuRecognizer>(gameMode, gameWindow);
-  auto result = recognizer->recognize();
-  auto solver = std::make_shared<SudokuBoard>(recognizer->getRecognizedBoard());
-  Player player(gameWindow, recognizer, solver, gameMode);
-  player.play();
+  DOUBLE_FOR_LOOP { std::cout << fmt::format("({}, {})\n", i, j); }
+  //auto gameMode = GameModeMap.at(FLAGS_game_mode);
+  //auto gameWindow = std::make_shared<GameWindow>(
+  //    FLAGS_dev_mode ? FLAGS_image_file_path : kGameWindowName.data());
+  //auto recognizer = std::make_shared<SudokuRecognizer>(gameMode, gameWindow);
+  //auto result = recognizer->recognize();
+  //auto solver = std::make_shared<SudokuBoard>(recognizer->getRecognizedBoard());
+  //Player player(gameWindow, recognizer, solver, gameMode);
+  //player.play();
   return 0;
 }

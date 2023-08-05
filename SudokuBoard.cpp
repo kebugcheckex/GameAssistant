@@ -5,13 +5,22 @@
 */
 
 #include "pch.h"
-#include <fmt/core.h>
+
 #include "SudokuBoard.h"
 
-SudokuBoard::SudokuBoard(Board board) {
-  board_ = board;
-  originalBoard_ = board;
-  printBoard("Original Board", originalBoard_);
+SudokuBoard::SudokuBoard(const Board& initialBoard, const Blocks& blocks)
+    : board_(initialBoard), initialBoard_(initialBoard), blocks_(blocks) {
+  printBoard("Initial Board", initialBoard);
+
+  if (blocks_.size() == 0) {
+    blocks_.resize(kDimension);
+    DOUBLE_FOR_LOOP {
+      int coord = i * 9 + j;
+      int blockId = (i / 3) * 3 + j / 3;
+      blocks_[blockId].insert(coord);
+    }
+  }
+  blocksMap_ = createBlocksMap(blocks_);
 }
 
 bool SudokuBoard::isPresentInCol(int col, int num) {
@@ -43,6 +52,17 @@ bool SudokuBoard::isPresentInBox(int boxStartRow, int boxStartCol, int num) {
   return false;
 }
 
+bool SudokuBoard::isPresentInBlock(int row, int col, int num) {
+  int blockId = blocksMap_[convertCoordinateToIndex(row, col)];
+  for (const auto& cell : blocks_[blockId]) {
+    auto [row, col] = convertIndexToCoordinate(cell);
+    if (board_[row][col] == num) {
+      return true;
+    }
+  }
+  return false;
+}
+
 bool SudokuBoard::findEmptyPlace(int& row, int& col) {
   for (row = 0; row < kDimension; row++) {
     for (col = 0; col < kDimension; col++) {
@@ -55,9 +75,8 @@ bool SudokuBoard::findEmptyPlace(int& row, int& col) {
 }
 
 bool SudokuBoard::isValidPlace(int row, int col, int num) {
-  auto valid = !isPresentInRow(row, num) && !isPresentInCol(col, num) &&
-               !isPresentInBox(row - row % 3, col - col % 3, num);
-  return valid;
+  return !isPresentInRow(row, num) && !isPresentInCol(col, num) &&
+         !isPresentInBlock(row, col, num);
 }
 
 bool SudokuBoard::solve() {
@@ -88,7 +107,7 @@ Board SudokuBoard::getSolvedBoard() {
   Board solvedBoard = board_;
   for (int i = 0; i < kDimension; i++) {
     for (int j = 0; j < kDimension; j++) {
-      if (originalBoard_[i][j] != 0) {
+      if (initialBoard_[i][j] != 0) {
         solvedBoard[i][j] = 0;
       }
     }
@@ -98,7 +117,7 @@ Board SudokuBoard::getSolvedBoard() {
 
 /* static */
 void SudokuBoard::printBoard(const std::string& title, const Board& board) {
-    // TODO fix a few issues here and write unit tests
+  // TODO fix a few issues here and write unit tests
   constexpr std::string_view kHorizontalLine = "-------------------------\n";
   std::cout << "====================\n";
   std::cout << title << "\n";
@@ -117,7 +136,7 @@ void SudokuBoard::printBoard(const std::string& title, const Board& board) {
   for (int i = 0; i < 9; i++) {
     std::cout << "| ";
     for (int j = 0; j < 9; j++) {
-      std::cout << fmt::format("{0: {1}} ", board[i][j], columnWidths[j]);
+      std::cout << fmt::format("{0:{1}} ", board[i][j], columnWidths[j]);
       if (j % 3 == 2) {
         std::cout << "| ";
       }
@@ -128,4 +147,27 @@ void SudokuBoard::printBoard(const std::string& title, const Board& board) {
     }
   }
   std::cout << "\n";
+}
+
+// static
+int SudokuBoard::convertCoordinateToIndex(int row, int col) {
+  return row * kDimension + col;
+}
+
+// static
+std::pair<int, int> SudokuBoard::convertIndexToCoordinate(int index) {
+  return {index / kDimension, index % kDimension};
+}
+
+// static
+std::unordered_map<int, int> SudokuBoard::createBlocksMap(
+    const Blocks& blocks) {
+  std::unordered_map<int, int> blocksMap;
+  for (std::size_t i = 0; i < kDimension; i++) {
+    const auto& block = blocks[i];
+    for (auto index : block) {
+      blocksMap.insert({index, i});
+    }
+  }
+  return blocksMap;
 }
