@@ -30,7 +30,8 @@ class SudokuRecognizer {
    * times it takes to eliminate the ice.
    */
   Board getIceBoard();
-  RECT getBoardRect();
+ 
+  cv::Rect getBoardRect();
 
   static void showImage(const cv::Mat& image, const std::string& title);
   // util functions
@@ -46,7 +47,7 @@ class SudokuRecognizer {
   
   cv::Mat image_;
   Board recognizedBoard_, iceBoard_;
-  cv::Rect cvBoardRect_;
+  cv::Rect boardRect_;
   GameMode gameMode_;
   Blocks blocks_;
   std::shared_ptr<GameWindow> gameWindow_;

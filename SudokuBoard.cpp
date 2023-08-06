@@ -11,8 +11,6 @@
 
 SudokuBoard::SudokuBoard(const Board& initialBoard, const Blocks& blocks)
     : board_(initialBoard), initialBoard_(initialBoard), blocks_(blocks) {
-  printBoard("Initial Board", initialBoard);
-
   if (blocks_.size() == 0) {
     blocks_.resize(kDimension);
     DOUBLE_FOR_LOOP {
@@ -21,7 +19,6 @@ SudokuBoard::SudokuBoard(const Board& initialBoard, const Blocks& blocks)
       blocks_[blockId].insert(coord);
     }
   }
-  printBlocks(blocks_, "debug111");
   blocksMap_ = createBlocksMap(blocks_);
 }
 
@@ -107,6 +104,8 @@ Board SudokuBoard::getSolvedBoard() {
   }
   return solvedBoard;
 }
+
+Blocks SudokuBoard::getBlocks() { return blocks_; }
 
 // static
 void SudokuBoard::printBoard(const std::string& title, const Board& board) {

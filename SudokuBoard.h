@@ -29,6 +29,8 @@ class SudokuBoard {
    */
   Board getSolvedBoard();
 
+  Blocks getBlocks();
+
   // Utility functions
   // TODO change the order of the two params
   static void printBoard(const std::string& title, const Board& board);

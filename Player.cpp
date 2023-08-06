@@ -1,4 +1,5 @@
 #include "pch.h"
+
 #include "Player.h"
 
 #include <fmt/core.h>
@@ -6,50 +7,53 @@
 
 #include <queue>
 
+std::unordered_map<std::string, FillOrder> const FillOrderOptions = {
+    {"row", FillOrder::ROW},
+    {"col", FillOrder::COLUMN},
+    {"block", FillOrder::BLOCK},
+};
+
+// TODO maybe create a template to unify this one and validateGameMode in main.cpp?
 static bool validateFillOrder(const char* flagName, const std::string& value) {
-  if (value != "row" && value != "col" && value != "row|col") {
-    std::cerr << "Invalid value for --" << flagName << " " << value << "\n";
+  if (!value.empty() && FillOrderOptions.find(value) == FillOrderOptions.end()) {
+    LOG(ERROR) << fmt::format("Invalid value for option --{} {}", flagName,
+                              value);
     return false;
   }
   return true;
 }
 
-DEFINE_string(fill_order, "row|col", "Fill by rows or columns");
+DEFINE_string(fill_order, "", "Fill by row | col | block");
 DEFINE_validator(fill_order, &validateFillOrder);
 DEFINE_int32(play_interval, 3000,
              "Time interval between automatic play actions");
-DEFINE_int32(
-    stop_after, 9,
-    "Stop playing after finishing certain number of rows/columns");
+DEFINE_int32(stop_after, 9,
+             "Stop playing after finishing certain number of rows/columns");
 
 Player::Player(std::shared_ptr<GameWindow> gameWindow,
                std::shared_ptr<SudokuRecognizer> recognizer,
-               std::shared_ptr<SudokuBoard> solver, GameMode gameMode)
+               std::shared_ptr<SudokuBoard> sudokuBoard, GameMode gameMode)
     : gameWindow_(gameWindow),
       recognizer_(recognizer),
-      solver_(solver),
+      sudokuBoard_(sudokuBoard),
       gameMode_(gameMode) {
-  auto monitorRect = gameWindow_->getMonitorRect();
-  screenWidth_ = monitorRect.right - monitorRect.left;
-  screenHeight_ = monitorRect.bottom - monitorRect.top;
-
-  auto windowRect = gameWindow_->getWindowRect();
   boardRect_ = recognizer_->getBoardRect();
-  boardRect_.left += windowRect.left;
-  boardRect_.top += windowRect.top;
-  boardRect_.right += windowRect.left;
-  boardRect_.bottom += windowRect.top;
-  DLOG(INFO) << fmt::format("Board Rect: ({}, {}) -> ({}, {})\n",
-                            boardRect_.left, boardRect_.top, boardRect_.right,
-                            boardRect_.bottom);
-  gridSize_ = (boardRect_.right - boardRect_.left) / 9;
+  gridSize_ = boardRect_.width / 9;
 }
 
 void Player::play() {
+  if (FLAGS_fill_order.empty()) {
+    LOG(INFO) << "--fill-order not set, will not auto-play";
+    return;
+  }
+  // Need to click in the window first to make sure it gets focus
+  gameWindow_->clickAt(boardRect_.x - 10, boardRect_.y - 50);
+  Sleep(3000);  // there is an animation before the screen settles
+
   switch (gameMode_) {
     case GameMode::CLASSIC:
     case GameMode::IRREGULAR:
-      playNormalBoard();
+      playNormalBoard(FillOrderOptions.at(FLAGS_fill_order));
       break;
     case GameMode::ICE_BREAKER:
       playIceBreaker();
@@ -60,32 +64,38 @@ void Player::play() {
 }
 
 // TODO irregular board need a separate logic for fill N blocks
-void Player::playNormalBoard() {
-  auto board = solver_->getSolvedBoard();
-  SudokuBoard::printBoard("Solved board", board);
-
-  if (FLAGS_fill_order != "row" && FLAGS_fill_order != "col") {
-    LOG(ERROR) << "No fill order specified. Will not auto play\n";
-    return;
-  }
+void Player::playNormalBoard(FillOrder fillOrder) {
+  auto solvedBoard = sudokuBoard_->getSolvedBoard();
 
   LOG(INFO) << "Auto-play started";
-  // Need to click in the window first to make sure it gets focus
-  clickAt(boardRect_.left, boardRect_.top - 50);
-  Sleep(3000);  // there is an animation before the screen settles
 
-  for (int i = 0; i < FLAGS_stop_after; i++) {
-    for (int j = 0; j < 9; j++) {
-      if (FLAGS_fill_order == "row") {
-        if (board[i][j] == 0) {
+  if (fillOrder == FillOrder::BLOCK) {
+    auto blocks = sudokuBoard_->getBlocks();
+    for (int i = 0; i < FLAGS_stop_after; i++) {
+      for (const int index : blocks[i]) {
+        auto [row, col] = SudokuBoard::convertIndexToCoordinate(index);
+        if (solvedBoard[row][col] == 0) {
           continue;
         }
-        fillAt(i, j, (char)board[i][j]);
-      } else if (FLAGS_fill_order == "col") {
-        if (board[j][i] == 0) {
-          continue;
+        fillAt(row, col, (char)solvedBoard[row][col]);
+      }
+    }
+  } else {
+    for (int i = 0; i < FLAGS_stop_after; i++) {
+      for (int j = 0; j < 9; j++) {
+        if (fillOrder == FillOrder::ROW) {
+          if (solvedBoard[i][j] == 0) {
+            continue;
+          }
+          fillAt(i, j, (char)solvedBoard[i][j]);
+        } else if (fillOrder == FillOrder::COLUMN) {
+          if (solvedBoard[j][i] == 0) {
+            continue;
+          }
+          fillAt(j, i, (char)solvedBoard[j][i]);
+        } else {
+          LOG(FATAL) << "Unknown fill order " << fillOrder;
         }
-        fillAt(j, i, (char)board[j][i]);
       }
     }
   }
@@ -93,8 +103,8 @@ void Player::playNormalBoard() {
 }
 
 void Player::playIceBreaker() {
-  auto solvedBoard = solver_->getSolvedBoard();
-  SudokuBoard::printBoard("Completed board", solver_->getCompletedBoard());
+  auto solvedBoard = sudokuBoard_->getSolvedBoard();
+  SudokuBoard::printBoard("Completed board", sudokuBoard_->getCompletedBoard());
   auto iceBoard = recognizer_->getIceBoard();
 
   std::vector<std::pair<int, int>> steps;
@@ -136,10 +146,10 @@ void Player::playIceBreaker() {
     // make sure the location is not on an ice cell
     DCHECK_LE(iceBoard[maxRow][maxCol], 0);
     steps.push_back({maxRow, maxCol});
-    
+
     // once a number is placed, remove it from solved board
     solvedBoard[maxRow][maxCol] = 0;
-    
+
     for (int i = 0; i < 9; i++) {
       if (iceBoard[maxRow][i] > 0) {
         iceBoard[maxRow][i]--;
@@ -167,47 +177,21 @@ void Player::playIceBreaker() {
     }
   }
   // get a fresh copy as the previous copy has been modified
-  solvedBoard = solver_->getSolvedBoard();  
-  clickAt(boardRect_.left, boardRect_.top - 50);
-  Sleep(3000);  // there is an animation before the screen settles
-
+  solvedBoard = sudokuBoard_->getSolvedBoard();
   for (const auto& step : steps) {
     auto [row, col] = step;
-    LOG(INFO) << fmt::format("Place {} at ({}, {})\n", solvedBoard[row][col], row + 1, col + 1);
+    LOG(INFO) << fmt::format("Place {} at ({}, {})\n", solvedBoard[row][col],
+                             row + 1, col + 1);
     fillAt(row, col, (char)solvedBoard[row][col]);
   }
   LOG(INFO) << "Auto-play completed.\n";
 }
 
-void Player::clickAt(int x, int y) {
-  INPUT inputs[3] = {};
-  inputs[0].type = INPUT_MOUSE;
-  inputs[0].mi.dx = (int)((float)x / screenWidth_ * 65535.f);
-  inputs[0].mi.dy = (int)((float)y / screenHeight_ * 65535.f);
-  inputs[0].mi.dwFlags = MOUSEEVENTF_MOVE | MOUSEEVENTF_ABSOLUTE;
-  inputs[1].type = INPUT_MOUSE;
-  inputs[1].mi.dwFlags = MOUSEEVENTF_LEFTDOWN;
-  inputs[2].type = INPUT_MOUSE;
-  inputs[2].mi.dwFlags = MOUSEEVENTF_LEFTUP;
-  DLOG(INFO) << fmt::format("Clicking at ({}, {})\n", x, y);
-  SendInput(3, inputs, sizeof(INPUT));
-}
-
-void Player::pressKey(char ch) {
-  INPUT inputs[2] = {};
-  inputs[0].type = INPUT_KEYBOARD;
-  inputs[0].ki.wVk = ch;
-  inputs[1].type = INPUT_KEYBOARD;
-  inputs[1].ki.wVk = ch;
-  inputs[1].ki.dwFlags = KEYEVENTF_KEYUP;
-  SendInput(2, inputs, sizeof(INPUT));
-}
-
 void Player::fillAt(int row, int col, char value) {
-  int x = boardRect_.left + col * gridSize_ + gridSize_ / 2;
-  int y = boardRect_.top + row * gridSize_ + gridSize_ / 2;
-  clickAt(x, y);
+  int x = boardRect_.x + col * gridSize_ + gridSize_ / 2;
+  int y = boardRect_.y + row * gridSize_ + gridSize_ / 2;
+  gameWindow_->clickAt(x, y);
   Sleep(1000);
-  pressKey('0' + value);
+  gameWindow_->pressKey('0' + value);
   Sleep(FLAGS_play_interval);
 }

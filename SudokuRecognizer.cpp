@@ -74,19 +74,19 @@ void SudokuRecognizer::findBoardInWindow() {
                                      return area > 757000 && area < 828000;
                                    });
 
-  cvBoardRect_.x = boardContour->at(0).x;
-  cvBoardRect_.y = boardContour->at(0).y;
-  cvBoardRect_.width = boardContour->at(1).x - boardContour->at(0).x;
-  cvBoardRect_.height = boardContour->at(3).y - boardContour->at(0).y;
-  RecognizerUtils::printCvRect(cvBoardRect_);
+  boardRect_.x = boardContour->at(0).x;
+  boardRect_.y = boardContour->at(0).y;
+  boardRect_.width = boardContour->at(1).x - boardContour->at(0).x;
+  boardRect_.height = boardContour->at(3).y - boardContour->at(0).y;
+  RecognizerUtils::printCvRect(boardRect_);
 
-  DCHECK_GT(cvBoardRect_.area(), 757000);
-  DCHECK_LT(cvBoardRect_.area(), 828000);
+  DCHECK_GT(boardRect_.area(), 757000);
+  DCHECK_LT(boardRect_.area(), 828000);
 
   if (FLAGS_debug) {
     cv::Mat displayImage = image_.clone();
     std::vector<Contour> contoursForDrawing{*boardContour};
-    cv::rectangle(displayImage, cvBoardRect_, cv::Scalar(0, 0, 255), 2);
+    cv::rectangle(displayImage, boardRect_, cv::Scalar(0, 0, 255), 2);
 
     for (int i = 0; i < boardContour->size(); i++) {
       const auto& point = boardContour->at(i);
@@ -146,11 +146,11 @@ bool SudokuRecognizer::recognizeClassic() {
   recognizedBoard_ = Board(9, std::vector<int>(9, 0));
   findBoardInWindow();
 
-  cv::Mat boardImage = image_(cvBoardRect_).clone();
+  cv::Mat boardImage = image_(boardRect_).clone();
   cv::Mat displayImage = boardImage.clone();
 
   cv::cvtColor(boardImage, boardImage, cv::COLOR_BGR2GRAY);
-  cv::threshold(boardImage, boardImage, /* thresh */ 130, /* maxval */ 255,
+  cv::threshold(boardImage, boardImage, /* thresh */ 192, /* maxval */ 255,
                 cv::THRESH_BINARY);
   removeBoundary(boardImage);
 
@@ -187,12 +187,12 @@ bool SudokuRecognizer::recognizeClassic() {
 }
 
 bool SudokuRecognizer::recognizeIrreguluar() {
-  findBoardInWindow();
   recognizeClassic();
-  cv::Mat boardImage = image_(cvBoardRect_).clone();
+  cv::Mat boardImage = image_(boardRect_).clone();
   cv::cvtColor(boardImage, boardImage, cv::COLOR_BGR2GRAY);
-  cv::threshold(boardImage, boardImage, 128, 255, cv::THRESH_BINARY);
-  showImage(boardImage, "binary image");
+  cv::threshold(boardImage, boardImage, /* thresh */ 128, /* maxval */ 255,
+                cv::THRESH_BINARY);
+  showImage(boardImage, "recognizeIrreguluar: binary image");
   std::vector<std::vector<cv::Point>> contours;
   std::vector<cv::Vec4i> hierachy;
   cv::findContours(boardImage, contours, hierachy, cv::RETR_LIST,
@@ -200,15 +200,22 @@ bool SudokuRecognizer::recognizeIrreguluar() {
 
   // The area of a block is the total area of 9 cells. Excluding 10% for the
   // boundary area
-  auto blockArea = cvBoardRect_.area() * 0.9 / kDimension;
+  auto blockArea = boardRect_.area() * 0.9 / kDimension;
   std::vector<Contour> blockContours;
   std::copy_if(contours.begin(), contours.end(),
                std::back_inserter(blockContours),
                [blockArea](const Contour& contour) {
                  auto area = cv::contourArea(contour);
-                 // add 5% error margin
-                 return area > blockArea * 0.95 && area < blockArea * 1.05;
+                 // add 6% error margin
+                 return area > blockArea * 0.94 && area < blockArea * 1.06;
                });
+
+  cv::Mat displayImage = image_(boardRect_).clone();
+  for (int i = 0; i < kDimension; i++) {
+    cv::drawContours(displayImage, blockContours, i, kDebugColors[i], 2);
+  }
+  showImage(displayImage, "recognizeIrreguluar: block contours");
+
   if (blockContours.size() != 9) {
     LOG(ERROR) << fmt::format(
         "Failed to find the correct number of block contours. Actual number "
@@ -216,12 +223,9 @@ bool SudokuRecognizer::recognizeIrreguluar() {
         blockContours.size());
     return false;
   }
-  cv::Mat displayImage = image_(cvBoardRect_).clone();
-  cv::drawContours(displayImage, blockContours, -1, cv::Scalar(0, 0, 255), 2);
-  showImage(displayImage, "Blocks");
-
-  int cellWidth = (int)(cvBoardRect_.width / 9);
-  int cellHeight = (int)(cvBoardRect_.height / 9);
+  
+  int cellWidth = (int)(boardRect_.width / 9);
+  int cellHeight = (int)(boardRect_.height / 9);
 
   blocks_.resize(kDimension);
   DOUBLE_FOR_LOOP {
@@ -244,7 +248,7 @@ bool SudokuRecognizer::recognizeIrreguluar() {
           i, j, cellCenter.x, cellCenter.y);
       return false;
     }
-    cv::circle(displayImage, cellCenter, 10, kDebugColors[blockId], cv::FILLED);
+    cv::circle(displayImage, cellCenter, 20, kDebugColors[blockId], cv::FILLED);
   }
   showImage(displayImage, "Blocks with cell center");
 
@@ -272,23 +276,32 @@ cv::Scalar SudokuRecognizer::generateRandomColor() {
 
 Board SudokuRecognizer::getRecognizedBoard() {
   if (recognizedBoard_.empty()) {
-    recognize();
+    if (!recognize()) {
+      LOG(FATAL) << "failed to recognize board";
+    }
   }
   return recognizedBoard_;
 }
 
 Blocks SudokuRecognizer::getBlocks() { return blocks_; }
 
-Board SudokuRecognizer::getIceBoard() { return iceBoard_; }
+Board SudokuRecognizer::getIceBoard() {
+  if (iceBoard_.empty()) {
+    if (!recognizeIce()) {
+      LOG(FATAL) << "failed to recognize ice board";
+    }
+  }
+  return iceBoard_;
+}
 
 // Note - the current "ice" images are taken from the game screenshot when the
 // window size is fixed to 1700x1700. Template matching may not work if the
 // image scales. Need to use things like SIFT
 bool SudokuRecognizer::recognizeIce() {
   cv::Mat boardImage;
-  image_(cvBoardRect_).copyTo(boardImage);
+  image_(boardRect_).copyTo(boardImage);
   cv::Mat displayImage;
-  image_(cvBoardRect_).copyTo(displayImage);
+  image_(boardRect_).copyTo(displayImage);
 
   iceBoard_ = Board(9, std::vector<int>(9, 0));
   for (int i = 1; i <= 3; i++) {
@@ -323,19 +336,12 @@ bool SudokuRecognizer::recognizeIce() {
   return true;
 }
 
-RECT SudokuRecognizer::getBoardRect() {
-  RECT rect{};
-  rect.left = cvBoardRect_.x;
-  rect.top = cvBoardRect_.y;
-  rect.right = cvBoardRect_.x + cvBoardRect_.width;
-  rect.bottom = cvBoardRect_.y + cvBoardRect_.height;
-  return rect;
-}
+cv::Rect SudokuRecognizer::getBoardRect() { return boardRect_; }
 
 /* static */
 void SudokuRecognizer::showImage(const cv::Mat& image,
                                  const std::string& title) {
-  if (FLAGS_debug || FLAGS_dev_mode) {
+  if (FLAGS_debug) {
     cv::setWindowTitle(kCvWindowName.data(), title);
     cv::imshow(kCvWindowName.data(), image);
     cv::waitKey();

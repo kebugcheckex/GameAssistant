@@ -10,28 +10,26 @@
 #include "SudokuRecognizer.h"
 #include "SudokuBoard.h"
 
+enum FillOrder {ROW, COLUMN, BLOCK};
+
 class Player {
  public:
   Player(std::shared_ptr<GameWindow> gameWindow,
          std::shared_ptr<SudokuRecognizer> recognizer,
-         std::shared_ptr<SudokuBoard> solver, GameMode gameMode);
+         std::shared_ptr<SudokuBoard> sudokuBoard, GameMode gameMode);
 
   void play();
 
  private:
-  void playNormalBoard();
+  void playNormalBoard(FillOrder fillOrder);
   void playIceBreaker();
-
-  // TODO move the following functions to GameWindow class
-  // Click at absolute screen location (x, y)
-  void clickAt(int x, int y);
-  void pressKey(char ch);  // TODO maybe extend this to other virtual key codes
+  
   void fillAt(int row, int col, char value /* numerical value */);
 
-  int screenWidth_, screenHeight_, gridSize_;
-  RECT boardRect_;
+  int gridSize_;
+  cv::Rect boardRect_;
   GameMode gameMode_;
   std::shared_ptr<GameWindow> gameWindow_;
   std::shared_ptr<SudokuRecognizer> recognizer_;
-  std::shared_ptr<SudokuBoard> solver_;
+  std::shared_ptr<SudokuBoard> sudokuBoard_;
 };
