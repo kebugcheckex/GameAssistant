@@ -8,6 +8,8 @@
 #include "Defs.h"
 #include "GameWindow.h"
 
+constexpr double kScaleReference = 896.;
+
 class SudokuRecognizer {
  public:
   SudokuRecognizer(GameMode gameMode, std::shared_ptr<GameWindow> gameWindow);

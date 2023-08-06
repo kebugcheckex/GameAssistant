@@ -46,9 +46,6 @@ void Player::play() {
     LOG(INFO) << "--fill-order not set, will not auto-play";
     return;
   }
-  // Need to click in the window first to make sure it gets focus
-  gameWindow_->clickAt(boardRect_.x - 10, boardRect_.y - 50);
-  Sleep(3000);  // there is an animation before the screen settles
 
   switch (gameMode_) {
     case GameMode::CLASSIC:
@@ -68,6 +65,9 @@ void Player::playNormalBoard(FillOrder fillOrder) {
   auto solvedBoard = sudokuBoard_->getSolvedBoard();
 
   LOG(INFO) << "Auto-play started";
+  // Need to click in the window first to make sure it gets focus
+  gameWindow_->clickAt(boardRect_.x - 10, boardRect_.y - 50);
+  Sleep(3000);  // there is an animation before the screen settles
 
   if (fillOrder == FillOrder::BLOCK) {
     auto blocks = sudokuBoard_->getBlocks();
@@ -178,13 +178,17 @@ void Player::playIceBreaker() {
   }
   // get a fresh copy as the previous copy has been modified
   solvedBoard = sudokuBoard_->getSolvedBoard();
+  std::cout << "Auto-play started\n";
+  // Need to click in the window first to make sure it gets focus
+  gameWindow_->clickAt(boardRect_.x - 10, boardRect_.y - 50);
+  Sleep(3000);  // there is an animation before the screen settles
   for (const auto& step : steps) {
     auto [row, col] = step;
     LOG(INFO) << fmt::format("Place {} at ({}, {})\n", solvedBoard[row][col],
                              row + 1, col + 1);
     fillAt(row, col, (char)solvedBoard[row][col]);
   }
-  LOG(INFO) << "Auto-play completed.\n";
+  std::cout << "Auto-play completed.\n";
 }
 
 void Player::fillAt(int row, int col, char value) {

@@ -108,6 +108,6 @@ void RecognizerUtils::sortContourByArea(std::vector<Contour>& contours, bool des
             [descending](const Contour& a, const Contour& b) {
               auto areaA = cv::contourArea(a);
               auto areaB = cv::contourArea(b);
-              return (areaA < areaB) ^ descending;
+              return descending ? (areaA > areaB) : (areaA < areaB);
             });
 }

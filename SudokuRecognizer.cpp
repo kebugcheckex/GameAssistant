@@ -62,7 +62,7 @@ void SudokuRecognizer::findBoardInWindow() {
       rectangles.push_back(approximation);
     }
   }
-  RecognizerUtils::sortContourByArea(rectangles);
+  RecognizerUtils::sortContourByArea(rectangles, true);
   if (FLAGS_debug) {
     cv::Mat debugImage = image_.clone();
     cv::drawContours(debugImage, rectangles, -1, cv::Scalar(0, 0, 255), 2);
@@ -80,14 +80,19 @@ void SudokuRecognizer::findBoardInWindow() {
     }
     showImage(debugImage, "findBoardInWindow - rectangle contours");
   }
-  auto boardContour = std::find_if(
+
+  // Assuming the board is the second largest rectangle in the window, while the
+  // first being the whole window client area. This is not rigorous!
+  // If this doesn't work, use the commented code snippet instead.
+  auto boardContour = rectangles.begin() + 1;
+ /* auto boardContour = std::find_if(
       rectangles.begin(), rectangles.end(), [](const Contour& contour) {
         auto area = cv::contourArea(contour);
         return area > kWindowArea * 0.33 && area < kWindowArea * 0.35;
       });
   if (boardContour == rectangles.end()) {
     LOG(FATAL) << "failed to find the board contour";
-  }
+  }*/
   boardRect_.x = boardContour->at(0).x;
   boardRect_.y = boardContour->at(0).y;
   boardRect_.width = boardContour->at(1).x - boardContour->at(0).x;
@@ -306,9 +311,6 @@ Board SudokuRecognizer::getIceBoard() {
   return iceBoard_;
 }
 
-// Note - the current "ice" images are taken from the game screenshot when the
-// window size is fixed to 1700x1700. Template matching may not work if the
-// image scales. Need to use things like SIFT
 bool SudokuRecognizer::recognizeIce() {
   cv::Mat boardImage;
   image_(boardRect_).copyTo(boardImage);
@@ -316,32 +318,38 @@ bool SudokuRecognizer::recognizeIce() {
   image_(boardRect_).copyTo(displayImage);
 
   iceBoard_ = Board(9, std::vector<int>(9, 0));
-  for (int i = 1; i <= 3; i++) {
+  for (int iceLevel = 1; iceLevel <= 3; iceLevel++) {
     std::stringstream ss;
-    ss << "./images/ice" << i << ".png";
-    cv::Mat iceImage = cv::imread(ss.str());
-    ;
-    cv::Mat result;
+    cv::Mat iceImage =
+        cv::imread(fmt::format("./resources/ice{}.png", iceLevel));
+    double scale = boardRect_.width / kScaleReference;
+    cv::resize(iceImage, iceImage, cv::Size(), scale, scale);
 
-    // template matching is a bit slow, on slower hardware, we may need to
-    // downsample the image before doing template matching
+    cv::Mat result;
     cv::matchTemplate(boardImage, iceImage, result, cv::TM_CCOEFF_NORMED);
     double threshold = 0.9;
     std::vector<cv::Point> locations;
     cv::findNonZero(result > threshold, locations);
+    if (locations.empty()) {
+      return false;
+    }
+
+    int cellWidth = (int)(boardRect_.width / 9);
+    int cellHeight = (int)(boardRect_.height / 9);
+
     for (const auto& point : locations) {
-      auto x = point.x / 96, y = point.y / 96;
+      auto x = point.x / cellWidth, y = point.y / cellHeight;
       if (FLAGS_debug) {
         cv::rectangle(
             displayImage, point,
             cv::Point(point.x + iceImage.cols, point.y + iceImage.rows),
             cv::Scalar(0, 0, 255), 2);
-        std::stringstream ss;
-        ss << "(" << x << ", " << y << ", " << i << ")";
-        cv::putText(displayImage, ss.str(), point, cv::FONT_HERSHEY_SIMPLEX, 1,
-                    cv::Scalar(200, 0, 200), 2);
+        auto text = fmt::format("({}, {}) - {}", x, y, iceLevel);
+        cv::Point textLocation(point.x, point.y + cellHeight / 2);
+        cv::putText(displayImage, text, textLocation, cv::FONT_HERSHEY_SIMPLEX,
+                    0.4, cv::Scalar(200, 0, 200), 1);
       }
-      iceBoard_[y][x] = i;
+      iceBoard_[y][x] = iceLevel;
     }
   }
   showImage(displayImage, "ice locations");
