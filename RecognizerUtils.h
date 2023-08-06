@@ -30,4 +30,9 @@ class RecognizerUtils {
   static cv::Rect convertContourToRect(const Contour& contour);
 
   static void printCvRect(const cv::Rect& rect);
+
+  static int getRandomInt(int min, int max);
+
+  static void sortContourByArea(std::vector<Contour>& contours,
+                                bool descending = false);
 };

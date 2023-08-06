@@ -42,7 +42,7 @@ Player::Player(std::shared_ptr<GameWindow> gameWindow,
 }
 
 void Player::play() {
-  if (FLAGS_fill_order.empty()) {
+  if (gameMode_ != GameMode::ICE_BREAKER && FLAGS_fill_order.empty()) {
     LOG(INFO) << "--fill-order not set, will not auto-play";
     return;
   }

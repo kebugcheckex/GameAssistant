@@ -3,7 +3,7 @@
 #include "RecognizerUtils.h"
 
 #include <fmt/core.h>
-
+#include <random>
 #include <opencv2/imgproc.hpp>
 
 #include "Defs.h"
@@ -92,4 +92,22 @@ cv::Rect RecognizerUtils::convertContourToRect(const Contour& contour) {
 void RecognizerUtils::printCvRect(const cv::Rect& rect) {
   std::cout << fmt::format("Rectangle ({}, {}) -> ({}, {})\n", rect.x, rect.y,
                            rect.x + rect.width, rect.y + rect.height);
+}
+
+// static
+int RecognizerUtils::getRandomInt(int min, int max) {
+  std::random_device randomDevice;
+  std::mt19937 generator(randomDevice());
+  std::uniform_int_distribution<int> distribution(min, max);
+  return distribution(generator);
+}
+
+// static
+void RecognizerUtils::sortContourByArea(std::vector<Contour>& contours, bool descending) {
+  std::sort(contours.begin(), contours.end(),
+            [descending](const Contour& a, const Contour& b) {
+              auto areaA = cv::contourArea(a);
+              auto areaB = cv::contourArea(b);
+              return (areaA < areaB) ^ descending;
+            });
 }

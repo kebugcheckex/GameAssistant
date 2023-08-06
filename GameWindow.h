@@ -6,6 +6,9 @@
 
 // TODO may need i18n in other languages
 constexpr std::string_view kGameWindowName{"Microsoft Sudoku"};
+constexpr uint32_t kWindowWidth = 1200;
+constexpr uint32_t kWindowHeight = 900;
+constexpr uint32_t kWindowArea = kWindowWidth * kWindowHeight;
 
 class GameWindow {
  public:

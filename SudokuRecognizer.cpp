@@ -62,26 +62,37 @@ void SudokuRecognizer::findBoardInWindow() {
       rectangles.push_back(approximation);
     }
   }
-
-  // using area to find the board is probably accurate enough and using
-  // approxPolyDP and checking for rectangle above is likely unnecessary
-  auto boardContour = std::find_if(rectangles.begin(), rectangles.end(),
-                                   [](const Contour& contour) {
-                                     auto area = cv::contourArea(contour);
-                                     // TODO these magic number actually depends
-                                     // on the window size, currently hard-coded
-                                     // to 1700x1700 in GameWindow.cpp
-                                     return area > 757000 && area < 828000;
-                                   });
-
+  RecognizerUtils::sortContourByArea(rectangles);
+  if (FLAGS_debug) {
+    cv::Mat debugImage = image_.clone();
+    cv::drawContours(debugImage, rectangles, -1, cv::Scalar(0, 0, 255), 2);
+    for (const auto& contour : rectangles) {
+      cv::Point textLocation(
+          contour[0].x + RecognizerUtils::getRandomInt(-30, 30),
+          contour[0].y + RecognizerUtils::getRandomInt(-30, 30));
+      cv::line(debugImage, contour[0], textLocation, cv::Scalar(255, 0, 255),
+               2);
+      cv::putText(debugImage,
+                  std::to_string(static_cast<int>(cv::contourArea(contour))),
+                  textLocation, cv::FONT_HERSHEY_SIMPLEX, 0.5,
+                  cv::Scalar(255, 0, 255), 1);
+      DLOG(INFO) << "Contour area " << cv::contourArea(contour);
+    }
+    showImage(debugImage, "findBoardInWindow - rectangle contours");
+  }
+  auto boardContour = std::find_if(
+      rectangles.begin(), rectangles.end(), [](const Contour& contour) {
+        auto area = cv::contourArea(contour);
+        return area > kWindowArea * 0.33 && area < kWindowArea * 0.35;
+      });
+  if (boardContour == rectangles.end()) {
+    LOG(FATAL) << "failed to find the board contour";
+  }
   boardRect_.x = boardContour->at(0).x;
   boardRect_.y = boardContour->at(0).y;
   boardRect_.width = boardContour->at(1).x - boardContour->at(0).x;
   boardRect_.height = boardContour->at(3).y - boardContour->at(0).y;
   RecognizerUtils::printCvRect(boardRect_);
-
-  DCHECK_GT(boardRect_.area(), 757000);
-  DCHECK_LT(boardRect_.area(), 828000);
 
   if (FLAGS_debug) {
     cv::Mat displayImage = image_.clone();
@@ -150,8 +161,9 @@ bool SudokuRecognizer::recognizeClassic() {
   cv::Mat displayImage = boardImage.clone();
 
   cv::cvtColor(boardImage, boardImage, cv::COLOR_BGR2GRAY);
-  cv::threshold(boardImage, boardImage, /* thresh */ 192, /* maxval */ 255,
-                cv::THRESH_BINARY);
+  cv::threshold(boardImage, boardImage,
+                /* thresh */ gameMode_ == GameMode::ICE_BREAKER ? 250 : 192,
+                /* maxval */ 255, cv::THRESH_BINARY);
   removeBoundary(boardImage);
 
   // offset the thick boundaries by minus 1
@@ -223,7 +235,7 @@ bool SudokuRecognizer::recognizeIrreguluar() {
         blockContours.size());
     return false;
   }
-  
+
   int cellWidth = (int)(boardRect_.width / 9);
   int cellHeight = (int)(boardRect_.height / 9);
 
@@ -344,6 +356,9 @@ void SudokuRecognizer::showImage(const cv::Mat& image,
   if (FLAGS_debug) {
     cv::setWindowTitle(kCvWindowName.data(), title);
     cv::imshow(kCvWindowName.data(), image);
-    cv::waitKey();
+    char ch = cv::waitKey();
+    if (ch == 'q') {
+      exit(0);
+    }
   }
 }

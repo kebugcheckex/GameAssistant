@@ -28,10 +28,10 @@ GameWindow::GameWindow(const std::string& windowOrFileName) {
   if (hwnd_ == NULL) {
     throw std::runtime_error("Failed to find game window");
   }
-
-  // Resize the window to 1700x1700 so that the recognizer can use some
-  // hardcoded dimension values
-  MoveWindow(hwnd_, 0, 0, 1700, 1700, TRUE);
+  
+  // Move window to the top left of the screen and resize it for better image
+  // processing
+  MoveWindow(hwnd_, 0, 0, kWindowWidth, kWindowHeight, TRUE);
 
   if (!GetWindowRect(hwnd_, &windowRect_)) {
     throw std::runtime_error("Failed to get game window rect");
