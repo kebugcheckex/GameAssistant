@@ -90,7 +90,7 @@ cv::Rect RecognizerUtils::convertContourToRect(const Contour& contour) {
 
 // static
 void RecognizerUtils::printCvRect(const cv::Rect& rect) {
-  std::cout << fmt::format("Rectangle ({}, {}) -> ({}, {})\n", rect.x, rect.y,
+  LOG(INFO) << fmt::format("Rectangle ({}, {}) -> ({}, {})\n", rect.x, rect.y,
                            rect.x + rect.width, rect.y + rect.height);
 }
 

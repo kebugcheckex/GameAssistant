@@ -131,7 +131,6 @@
     <ClInclude Include="CaptureSnapshot.h" />
     <ClInclude Include="Defs.h" />
     <ClInclude Include="GameWindow.h" />
-    <ClInclude Include="OpenCVPlayground.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="Player.h" />
     <ClInclude Include="RecognizerUtils.h" />
@@ -142,7 +141,6 @@
     <ClCompile Include="CaptureSnapshot.cpp" />
     <ClCompile Include="GameWindow.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="OpenCVPlayground.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>

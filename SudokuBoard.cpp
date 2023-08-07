@@ -20,6 +20,7 @@ SudokuBoard::SudokuBoard(const Board& initialBoard, const Blocks& blocks)
     }
   }
   blocksMap_ = createBlocksMap(blocks_);
+  SudokuBoard::printBoard(initialBoard_, "Initial Board");
 }
 
 bool SudokuBoard::isPresentInCol(int col, int num) {
@@ -87,7 +88,7 @@ bool SudokuBoard::solve() {
 Board SudokuBoard::getCompletedBoard() {
   if (!solve()) {
     LOG(ERROR) << "failed to solve the board";
-    printBoard("Initial Board", initialBoard_);
+    printBoard(initialBoard_, "Initial Board");
   }
   return board_;
 }
@@ -108,7 +109,7 @@ Board SudokuBoard::getSolvedBoard() {
 Blocks SudokuBoard::getBlocks() { return blocks_; }
 
 // static
-void SudokuBoard::printBoard(const std::string& title, const Board& board) {
+void SudokuBoard::printBoard(const Board& board, const std::string& title) {
   // TODO fix a few issues here and write unit tests
   std::cout << "====================\n";
   std::cout << title << "\n";

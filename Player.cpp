@@ -63,6 +63,7 @@ void Player::play() {
 // TODO irregular board need a separate logic for fill N blocks
 void Player::playNormalBoard(FillOrder fillOrder) {
   auto solvedBoard = sudokuBoard_->getSolvedBoard();
+  SudokuBoard::printBoard(sudokuBoard_->getCompletedBoard(), "Complete Board");
 
   LOG(INFO) << "Auto-play started";
   // Need to click in the window first to make sure it gets focus
@@ -104,7 +105,7 @@ void Player::playNormalBoard(FillOrder fillOrder) {
 
 void Player::playIceBreaker() {
   auto solvedBoard = sudokuBoard_->getSolvedBoard();
-  SudokuBoard::printBoard("Completed board", sudokuBoard_->getCompletedBoard());
+  SudokuBoard::printBoard(sudokuBoard_->getCompletedBoard(), "Completed board");
   auto iceBoard = recognizer_->getIceBoard();
 
   std::vector<std::pair<int, int>> steps;

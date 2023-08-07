@@ -10,6 +10,13 @@
 #include "SudokuRecognizer.h"
 #include "SudokuBoard.h"
 
+/*
+ * Some useful command line options
+ * Classic: --game-mode classic --fill-order row --stop-after 3 --play-interval 1000
+ * Irregular: --game-mode irregular --fill-order col --stop-after 4 --play-interval 1000
+ * Icebreaker: --game-mode icebreaker --debug
+ */
+
 enum FillOrder {ROW, COLUMN, BLOCK};
 
 class Player {
