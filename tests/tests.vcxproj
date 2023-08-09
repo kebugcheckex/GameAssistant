@@ -59,11 +59,6 @@
     <ClCompile Include="SudokuBoardTest.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\AutoSudoku.vcxproj">
-      <Project>{1a39c8aa-34fd-423f-b2e7-c5025cefe2ec}</Project>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
   <ItemDefinitionGroup />
