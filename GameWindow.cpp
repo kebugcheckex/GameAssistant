@@ -9,7 +9,29 @@
 
 #include "CaptureSnapshot.h"
 
+static bool validateWindowSize(const char* flagName, const std::string& value) {
+  auto xLocation = value.find('x');
+  if (xLocation == std::string::npos) {
+    LOG(ERROR) << fmt::format("Invalid value for option --{} {}", flagName,
+                              value);
+    return false;
+  }
+  auto width = value.substr(0, xLocation);
+  auto height = value.substr(xLocation + 1);
+  try {
+    std::stoi(width);
+    std::stoi(height);
+  } catch (std::exception& ex) {
+    LOG(ERROR) << fmt::format(
+        "Invalid value for option --{} {} due to exception {}", flagName, value,
+        ex.what());
+    return false;
+  }
+}
+
 DECLARE_string(image_file);
+DEFINE_string(window_size, "1700x1700",
+              "Resize game window to width and height");
 
 using namespace winrt::Windows::Graphics::Capture;
 
@@ -28,10 +50,15 @@ GameWindow::GameWindow(const std::string& windowOrFileName) {
   if (hwnd_ == NULL) {
     throw std::runtime_error("Failed to find game window");
   }
-  
+
   // Move window to the top left of the screen and resize it for better image
   // processing
-  MoveWindow(hwnd_, 0, 0, kWindowWidth, kWindowHeight, TRUE);
+  auto xLocation = FLAGS_window_size.find('x');
+  auto width = FLAGS_window_size.substr(0, xLocation);
+  auto height = FLAGS_window_size.substr(xLocation + 1);
+  windowWidth_ = std::stoi(width);
+  windowHeight_ = std::stoi(height);
+  MoveWindow(hwnd_, 0, 0, windowWidth_, windowHeight_, TRUE);
 
   if (!GetWindowRect(hwnd_, &windowRect_)) {
     throw std::runtime_error("Failed to get game window rect");

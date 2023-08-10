@@ -15,7 +15,6 @@
 #include "SudokuBoard.h"
 
 DECLARE_bool(debug);
-DECLARE_bool(dev_mode);
 
 constexpr std::string_view kCvWindowName{"Auto Sudoku"};
 
