@@ -3,8 +3,14 @@
 #include "FreecellData.h"
 #include "GameWindow.h"
 
-namespace GameAssistant {
-namespace Freecell {
+namespace game_assistant {
+namespace freecell {
+
+typedef struct {
+  Suite suite;
+  Rank rank;
+  cv::Point location;
+} CardWithLocation;
 
 class FreecellRecognizer {
  public:
@@ -12,9 +18,10 @@ class FreecellRecognizer {
   bool recognize();
 
  private:
+  void printCardWithLocation(const CardWithLocation& card);
   Deck deck_;
   std::shared_ptr<GameWindow> gameWindow_;
 };
 
-}  // namespace Freecell
-}  // namespace GameAssistant
+}  // namespace freecell
+}  // namespace game_assistant

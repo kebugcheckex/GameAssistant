@@ -4,8 +4,8 @@
 #include <string>
 #include <unordered_map>
 
-namespace GameAssistant {
-namespace Freecell {
+namespace game_assistant {
+namespace freecell {
 enum Suite { CLUB, SPADE, DIAMOND, HEART };
 
 enum Rank {
@@ -35,10 +35,16 @@ typedef std::vector<Column> Deck;
 
 extern const std::unordered_map<Suite, std::string> kSuiteNames;
 extern const std::unordered_map<Suite, std::string> kSuiteSymbols;
+extern const std::unordered_map<char, Suite> kCharSuiteMap;
+extern const std::unordered_map<char, int> kSuiteOrderMap;
+extern const std::unordered_map<char, Rank> kCharRankMap;
+extern const std::unordered_map<char, int> kRankOrderMap;
 extern const std::unordered_map<Rank, std::string> kRankNames;
 
 int encodeCardLocation(int column, int position);
 std::tuple<int, int> decodeCardLocation(int location);
 
-}  // namespace Freecell
-}  // namespace GameAssistant
+void printCard(const Card& card);
+
+}  // namespace freecell
+}  // namespace game_assistant

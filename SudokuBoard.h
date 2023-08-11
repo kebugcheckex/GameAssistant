@@ -4,8 +4,10 @@
 #include <unordered_map>
 #include <vector>
 
-#include "Defs.h"
+#include "SudokuData.h"
 
+namespace game_assistant {
+namespace sudoku {
 constexpr std::string_view kBlocksSymbols{"+-*=@#$%&"};
 constexpr std::string_view kHorizontalLine = "-------------------------\n";
 
@@ -14,7 +16,8 @@ class SudokuBoard {
   /*
    * Construct a Sudoku board with some initial numbers. For irregular mode,
    * `blocks` is a vector of unordered sets where each row's index is the block
-   * ID and elements in each row is the 1D index representation of the coordinates
+   * ID and elements in each row is the 1D index representation of the
+   * coordinates
    */
   SudokuBoard(const Board& initialBoard, const Blocks& blocks);
 
@@ -47,6 +50,7 @@ class SudokuBoard {
   static std::pair<int, int> convertIndexToCoordinate(int index);
 
   static std::unordered_map<int, int> createBlocksMap(const Blocks& blocks);
+
  private:
   bool isPresentInCol(int col, int num);
   bool isPresentInRow(int row, int num);
@@ -62,3 +66,6 @@ class SudokuBoard {
   // maps a cell's coordinate (in 1d index form) to its block ID
   std::unordered_map<int, int> blocksMap_;
 };
+
+}  // namespace sudoku
+}  // namespace game_assistant

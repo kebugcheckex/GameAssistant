@@ -6,6 +6,7 @@
 
 // TODO may need i18n in other languages
 constexpr std::string_view kGameWindowName{"Microsoft Sudoku"};
+constexpr std::string_view kSolitareWindowName{"Solitaire & Casual Games"};
 
 class GameWindow {
  public:

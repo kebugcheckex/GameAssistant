@@ -33,7 +33,7 @@
     <ClInclude Include="Player.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Defs.h">
+    <ClInclude Include="SudokuData.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="RecognizerUtils.h">
@@ -75,6 +75,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="FreecellData.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SudokuData.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

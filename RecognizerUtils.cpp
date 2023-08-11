@@ -4,16 +4,20 @@
 
 #include <fmt/core.h>
 
-#include <opencv2/imgproc.hpp>
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgcodecs.hpp>
+#include <opencv2/imgproc.hpp>
 #include <random>
 
-#include "Defs.h"
+#include "FreecellData.h"
 
-// static
-double RecognizerUtils::calculateCosineAngle(cv::Point vertex, cv::Point side1,
-                                             cv::Point side2) {
+namespace game_assistant {
+namespace utils {
+
+constexpr double EPS = 1e-6;
+
+double calculateCosineAngle(cv::Point vertex, cv::Point side1,
+                            cv::Point side2) {
   /*
    * \cos(\theta) =
    * \frac{\mathbf{a}\mathbf{b}}{\lvert\mathbf{a}\rvert\lvert\mathbf{b}\rvert}
@@ -26,9 +30,8 @@ double RecognizerUtils::calculateCosineAngle(cv::Point vertex, cv::Point side1,
          std::sqrt((dx1 * dx1 + dy1 * dy1) * (dx2 * dx2 + dy2 * dy2) + 1e-10);
 }
 
-// static
-std::vector<cv::Rect> RecognizerUtils::findRectangles(
-    const std::vector<Contour>& contours, bool sortByAreaDesc) {
+std::vector<cv::Rect> findRectangles(const std::vector<Contour>& contours,
+                                     bool sortByAreaDesc) {
   std::vector<cv::Rect> rectangles;
   bool isRectangle = true;
   for (const auto& contour : contours) {
@@ -60,8 +63,7 @@ std::vector<cv::Rect> RecognizerUtils::findRectangles(
   return rectangles;
 }
 
-// static
-bool RecognizerUtils::isRectangle(const Contour& contour, bool rotated) {
+bool isRectangle(const Contour& contour, bool rotated) {
   if (contour.size() != 4) {
     return false;
   }
@@ -81,8 +83,7 @@ bool RecognizerUtils::isRectangle(const Contour& contour, bool rotated) {
   }
 }
 
-// static
-cv::Rect RecognizerUtils::convertContourToRect(const Contour& contour) {
+cv::Rect convertContourToRect(const Contour& contour) {
   DCHECK_EQ(contour.size(), 4);
   auto vertices = contour;
   std::sort(vertices.begin(), vertices.end(),
@@ -93,22 +94,17 @@ cv::Rect RecognizerUtils::convertContourToRect(const Contour& contour) {
   return cv::Rect(vertices[0], vertices[3]);
 }
 
-// static
-void RecognizerUtils::printCvRect(const cv::Rect& rect) {
+void printCvRect(const cv::Rect& rect) {
   LOG(INFO) << fmt::format("Rectangle ({}, {}) -> ({}, {})\n", rect.x, rect.y,
                            rect.x + rect.width, rect.y + rect.height);
 }
 
-// static
-int RecognizerUtils::getRandomInt(int min, int max) {
+int getRandomInt(int min, int max) {
   std::random_device randomDevice;
   std::mt19937 generator(randomDevice());
   std::uniform_int_distribution<int> distribution(min, max);
   return distribution(generator);
 }
-
-namespace GameAssistant {
-namespace Utils {
 
 // TODO some of the orders are wrong, they are in RGB, fix them
 const std::vector<cv::Scalar> kDebugColors{
@@ -138,8 +134,7 @@ void showImage(const cv::Mat& image, const std::string& title) {
   }
 }
 
-void sortContourByArea(std::vector<Contour>& contours,
-                                        bool descending) {
+void sortContourByArea(std::vector<Contour>& contours, bool descending) {
   std::sort(contours.begin(), contours.end(),
             [descending](const Contour& a, const Contour& b) {
               auto areaA = cv::contourArea(a);
@@ -148,5 +143,42 @@ void sortContourByArea(std::vector<Contour>& contours,
             });
 }
 
-}  // namespace Utils
-}  // namespace GameAssistant
+void generateFreecellTemplate(const std::string& filePath) {
+  auto screenshot = cv::imread(filePath);
+  if (screenshot.empty()) {
+    LOG(FATAL) << fmt::format("Failed to read image file {}", filePath);
+  }
+  constexpr std::string_view kWindowName{"Freecell Template"};
+  cv::namedWindow(kWindowName.data());
+
+  constexpr std::string_view kOutputWindowName { "Freecell Output" };
+  cv::namedWindow(kOutputWindowName.data());
+  const int dx = 172, dy = 47, width = 118, height = 42;
+  cv::Mat output(height * 13, width * 4, CV_8UC3);
+  const cv::Point offset(130, 278);
+
+  int count = 1;
+  for (int col = 0; col < 8; col++) {
+    int numCards = col < 4 ? 7 : 6;
+    for (int row = 0; row < numCards; row++) {
+      cv::Rect sourceRect(offset.x + col * dx, offset.y + row * dy, width,
+                          height);
+      cv::imshow(kWindowName.data(), screenshot(sourceRect));
+      cv::waitKey(100);
+      std::string card;
+      std::cout << fmt::format("({}/52) Enter card: ", count++);
+      std::cin >> card;  // e.g. JH, 3C
+      int outputRow = freecell::kRankOrderMap.at(card.at(0));
+      int outputCol = freecell::kSuiteOrderMap.at(card.at(1));
+      cv::Rect destinationRect(outputCol * width, outputRow * height, width,
+                               height);
+      screenshot(sourceRect).copyTo(output(destinationRect));
+      cv::imshow(kOutputWindowName.data(), output);
+    }
+  }
+  cv::imshow(kWindowName.data(), output);
+  cv::waitKey(0);
+  cv::imwrite(R"(.\images\card_headers.png)", output);
+}
+}  // namespace utils
+}  // namespace game_assistant

@@ -16,6 +16,8 @@
 
 DECLARE_bool(debug);
 
+namespace game_assistant {
+namespace sudoku {
 SudokuRecognizer::SudokuRecognizer(GameMode gameMode,
                                    std::shared_ptr<GameWindow> gameWindow)
     : gameMode_(gameMode), gameWindow_(gameWindow) {
@@ -30,28 +32,28 @@ void SudokuRecognizer::findBoardInWindow() {
   cv::cvtColor(image, image, cv::COLOR_BGR2GRAY);
   cv::threshold(image, image, /* thresh */ 128, /* maxval */ 255,
                 cv::THRESH_BINARY);
-  std::vector<Contour> contours;
+  std::vector<utils::Contour> contours;
   std::vector<cv::Vec4i> hierachy;
   cv::findContours(image, contours, hierachy, cv::RETR_LIST,
                    cv::CHAIN_APPROX_SIMPLE);
-  std::vector<Contour> rectangles;
+  std::vector<utils::Contour> rectangles;
   for (const auto& contour : contours) {
-    Contour approximation;
+    utils::Contour approximation;
     cv::approxPolyDP(contour, approximation,
                      cv::arcLength(contour, /* closed */ true) * 0.02,
                      /* closed */ true);
-    if (RecognizerUtils::isRectangle(approximation)) {
+    if (utils::isRectangle(approximation)) {
       rectangles.push_back(approximation);
     }
   }
-  GameAssistant::Utils::sortContourByArea(rectangles, true);
+  game_assistant::utils::sortContourByArea(rectangles, true);
   if (FLAGS_debug) {
     cv::Mat debugImage = image_.clone();
     cv::drawContours(debugImage, rectangles, -1, cv::Scalar(0, 0, 255), 2);
     /* for (const auto& contour : rectangles) {
       cv::Point textLocation(
-          contour[0].x + RecognizerUtils::getRandomInt(-30, 30),
-          contour[0].y + RecognizerUtils::getRandomInt(-30, 30));
+          contour[0].x + Recognizerutils::getRandomInt(-30, 30),
+          contour[0].y + Recognizerutils::getRandomInt(-30, 30));
       cv::line(debugImage, contour[0], textLocation, cv::Scalar(255, 0, 255),
                2);
       cv::putText(debugImage,
@@ -79,11 +81,11 @@ void SudokuRecognizer::findBoardInWindow() {
   boardRect_.y = boardContour->at(0).y;
   boardRect_.width = boardContour->at(1).x - boardContour->at(0).x;
   boardRect_.height = boardContour->at(3).y - boardContour->at(0).y;
-  RecognizerUtils::printCvRect(boardRect_);
+  utils::printCvRect(boardRect_);
 
   if (FLAGS_debug) {
     cv::Mat displayImage = image_.clone();
-    std::vector<Contour> contoursForDrawing{*boardContour};
+    std::vector<utils::Contour> contoursForDrawing{*boardContour};
     cv::rectangle(displayImage, boardRect_, cv::Scalar(0, 0, 255), 2);
 
     for (int i = 0; i < boardContour->size(); i++) {
@@ -201,10 +203,10 @@ bool SudokuRecognizer::recognizeIrreguluar() {
   // The area of a block is the total area of 9 cells. Excluding 10% for the
   // boundary area
   auto blockArea = boardRect_.area() * 0.9 / kDimension;
-  std::vector<Contour> blockContours;
+  std::vector<utils::Contour> blockContours;
   std::copy_if(contours.begin(), contours.end(),
                std::back_inserter(blockContours),
-               [blockArea](const Contour& contour) {
+               [blockArea](const utils::Contour& contour) {
                  auto area = cv::contourArea(contour);
                  // add 6% error margin
                  return area > blockArea * 0.94 && area < blockArea * 1.06;
@@ -213,7 +215,7 @@ bool SudokuRecognizer::recognizeIrreguluar() {
   cv::Mat displayImage = image_(boardRect_).clone();
   for (int i = 0; i < kDimension; i++) {
     cv::drawContours(displayImage, blockContours, i,
-                     GameAssistant::Utils::kDebugColors[i], 2);
+                     game_assistant::utils::kDebugColors[i], 2);
   }
   showImage(displayImage, "recognizeIrreguluar block contours");
 
@@ -250,7 +252,7 @@ bool SudokuRecognizer::recognizeIrreguluar() {
       return false;
     }
     cv::circle(displayImage, cellCenter, 20,
-               GameAssistant::Utils::kDebugColors[blockId], cv::FILLED);
+               game_assistant::utils::kDebugColors[blockId], cv::FILLED);
   }
   showImage(displayImage, "Blocks with cell center");
 
@@ -358,3 +360,6 @@ void SudokuRecognizer::showImage(const cv::Mat& image,
     }
   }
 }
+
+}  // namespace sudoku
+}  // namespace game_assistant

@@ -129,7 +129,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="CaptureSnapshot.h" />
-    <ClInclude Include="Defs.h" />
+    <ClInclude Include="SudokuData.h" />
     <ClInclude Include="FreecellData.h" />
     <ClInclude Include="FreecellRecognizer.h" />
     <ClInclude Include="GameWindow.h" />
@@ -150,6 +150,7 @@
     </ClCompile>
     <ClCompile Include="Player.cpp" />
     <ClCompile Include="RecognizerUtils.cpp" />
+    <ClCompile Include="SudokuData.cpp" />
     <ClCompile Include="SudokuRecognizer.cpp" />
     <ClCompile Include="SudokuBoard.cpp" />
   </ItemGroup>

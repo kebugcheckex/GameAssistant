@@ -6,16 +6,18 @@
 #include <glog/logging.h>
 
 #include <queue>
-
+namespace game_assistant {
 std::unordered_map<std::string, FillOrder> const FillOrderOptions = {
     {"row", FillOrder::ROW},
     {"col", FillOrder::COLUMN},
     {"block", FillOrder::BLOCK},
 };
 
-// TODO maybe create a template to unify this one and validateGameMode in main.cpp?
+// TODO maybe create a template to unify this one and validateGameMode in
+// main.cpp?
 static bool validateFillOrder(const char* flagName, const std::string& value) {
-  if (!value.empty() && FillOrderOptions.find(value) == FillOrderOptions.end()) {
+  if (!value.empty() &&
+      FillOrderOptions.find(value) == FillOrderOptions.end()) {
     LOG(ERROR) << fmt::format("Invalid value for option --{} {}", flagName,
                               value);
     return false;
@@ -31,8 +33,9 @@ DEFINE_int32(stop_after, 9,
              "Stop playing after finishing certain number of rows/columns");
 
 Player::Player(std::shared_ptr<GameWindow> gameWindow,
-               std::shared_ptr<SudokuRecognizer> recognizer,
-               std::shared_ptr<SudokuBoard> sudokuBoard, GameMode gameMode)
+               std::shared_ptr<sudoku::SudokuRecognizer> recognizer,
+               std::shared_ptr<sudoku::SudokuBoard> sudokuBoard,
+               sudoku::GameMode gameMode)
     : gameWindow_(gameWindow),
       recognizer_(recognizer),
       sudokuBoard_(sudokuBoard),
@@ -42,17 +45,17 @@ Player::Player(std::shared_ptr<GameWindow> gameWindow,
 }
 
 void Player::play() {
-  if (gameMode_ != GameMode::ICE_BREAKER && FLAGS_fill_order.empty()) {
+  if (gameMode_ != sudoku::GameMode::ICE_BREAKER && FLAGS_fill_order.empty()) {
     LOG(INFO) << "--fill-order not set, will not auto-play";
     return;
   }
 
   switch (gameMode_) {
-    case GameMode::CLASSIC:
-    case GameMode::IRREGULAR:
+    case sudoku::GameMode::CLASSIC:
+    case sudoku::GameMode::IRREGULAR:
       playNormalBoard(FillOrderOptions.at(FLAGS_fill_order));
       break;
-    case GameMode::ICE_BREAKER:
+    case sudoku::GameMode::ICE_BREAKER:
       playIceBreaker();
       break;
     default:
@@ -63,7 +66,8 @@ void Player::play() {
 // TODO irregular board need a separate logic for fill N blocks
 void Player::playNormalBoard(FillOrder fillOrder) {
   auto solvedBoard = sudokuBoard_->getSolvedBoard();
-  SudokuBoard::printBoard(sudokuBoard_->getCompletedBoard(), "Complete Board");
+  sudoku::SudokuBoard::printBoard(sudokuBoard_->getCompletedBoard(),
+                                  "Complete Board");
 
   LOG(INFO) << "Auto-play started";
   // Need to click in the window first to make sure it gets focus
@@ -74,7 +78,7 @@ void Player::playNormalBoard(FillOrder fillOrder) {
     auto blocks = sudokuBoard_->getBlocks();
     for (int i = 0; i < FLAGS_stop_after; i++) {
       for (const int index : blocks[i]) {
-        auto [row, col] = SudokuBoard::convertIndexToCoordinate(index);
+        auto [row, col] = sudoku::SudokuBoard::convertIndexToCoordinate(index);
         if (solvedBoard[row][col] == 0) {
           continue;
         }
@@ -105,12 +109,13 @@ void Player::playNormalBoard(FillOrder fillOrder) {
 
 void Player::playIceBreaker() {
   auto solvedBoard = sudokuBoard_->getSolvedBoard();
-  SudokuBoard::printBoard(sudokuBoard_->getCompletedBoard(), "Completed board");
+  sudoku::SudokuBoard::printBoard(sudokuBoard_->getCompletedBoard(),
+                                  "Completed board");
   auto iceBoard = recognizer_->getIceBoard();
 
   std::vector<std::pair<int, int>> steps;
   while (true) {
-    Board weightBoard(9, std::vector<int>(9, 0));
+    sudoku::Board weightBoard(9, std::vector<int>(9, 0));
     // For each ice cell, add the ice weight to all its row and column cells,
     // excluding cells with existing numbers or the other ice cells
     for (int row = 0; row < 9; row++) {
@@ -200,3 +205,4 @@ void Player::fillAt(int row, int col, char value) {
   gameWindow_->pressKey('0' + value);
   Sleep(FLAGS_play_interval);
 }
+}  // namespace game_assistant

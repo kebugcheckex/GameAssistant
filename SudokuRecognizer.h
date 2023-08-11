@@ -5,9 +5,11 @@
 #include <opencv2/core.hpp>
 #include <vector>
 
-#include "Defs.h"
 #include "GameWindow.h"
+#include "SudokuData.h"
 
+namespace game_assistant {
+namespace sudoku {
 constexpr double kScaleReference = 896.;
 
 class SudokuRecognizer {
@@ -32,7 +34,7 @@ class SudokuRecognizer {
    * times it takes to eliminate the ice.
    */
   Board getIceBoard();
- 
+
   cv::Rect getBoardRect();
 
   static void showImage(const cv::Mat& image, const std::string& title);
@@ -46,7 +48,6 @@ class SudokuRecognizer {
   void removeBoundary(cv::Mat& image);
   bool recognizeIce();
 
-  
   cv::Mat image_;
   Board recognizedBoard_, iceBoard_;
   cv::Rect boardRect_;
@@ -54,3 +55,6 @@ class SudokuRecognizer {
   Blocks blocks_;
   std::shared_ptr<GameWindow> gameWindow_;
 };
+
+}  // namespace sudoku
+}  // namespace game_assistant

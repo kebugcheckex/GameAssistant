@@ -7,8 +7,11 @@
 #include "pch.h"
 
 #include "SudokuBoard.h"
+
 #include <fmt/core.h>
 
+namespace game_assistant {
+namespace sudoku {
 SudokuBoard::SudokuBoard(const Board& initialBoard, const Blocks& blocks)
     : board_(initialBoard), initialBoard_(initialBoard), blocks_(blocks) {
   if (blocks_.size() == 0) {
@@ -146,8 +149,7 @@ void SudokuBoard::printBoard(const Board& board, const std::string& title) {
 }
 
 // static
-void SudokuBoard::printBlocks(const Blocks& blocks,
-                              const std::string& title) {
+void SudokuBoard::printBlocks(const Blocks& blocks, const std::string& title) {
   std::cout << "====================\n";
   std::cout << "Blocks: " << title << "\n";
   std::cout << "====================\n";
@@ -193,3 +195,6 @@ std::unordered_map<int, int> SudokuBoard::createBlocksMap(
   }
   return blocksMap;
 }
+
+}  // namespace sudoku
+}  // namespace game_assistant
