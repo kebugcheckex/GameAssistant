@@ -3,17 +3,21 @@
 #include "RecognizerUtils.h"
 
 #include <fmt/core.h>
-#include <random>
+
 #include <opencv2/imgproc.hpp>
+#include <opencv2/highgui.hpp>
+#include <opencv2/imgcodecs.hpp>
+#include <random>
 
 #include "Defs.h"
 
 // static
 double RecognizerUtils::calculateCosineAngle(cv::Point vertex, cv::Point side1,
-                                       cv::Point side2) {
+                                             cv::Point side2) {
   /*
-  * \cos(\theta) = \frac{\mathbf{a}\mathbf{b}}{\lvert\mathbf{a}\rvert\lvert\mathbf{b}\rvert}
-  */
+   * \cos(\theta) =
+   * \frac{\mathbf{a}\mathbf{b}}{\lvert\mathbf{a}\rvert\lvert\mathbf{b}\rvert}
+   */
   double dx1 = side1.x - vertex.x;
   double dy1 = side1.y - vertex.y;
   double dx2 = side2.x - vertex.x;
@@ -29,14 +33,15 @@ std::vector<cv::Rect> RecognizerUtils::findRectangles(
   bool isRectangle = true;
   for (const auto& contour : contours) {
     std::vector<cv::Point> approx;
-    cv::approxPolyDP(contour, approx, cv::arcLength(contour, /* closed */ true) * 0.02,
+    cv::approxPolyDP(contour, approx,
+                     cv::arcLength(contour, /* closed */ true) * 0.02,
                      /* closed */ true);
     if (approx.size() != 4) {
       continue;
     }
     for (int i = 0; i < 4; i++) {
       auto angle = calculateCosineAngle(contour[(i + 1) % 4], contour[i],
-                                  contour[(i + 2) % 4]);
+                                        contour[(i + 2) % 4]);
       if (fabs(angle - 90. > EPS)) {
         isRectangle = false;
         break;
@@ -56,8 +61,7 @@ std::vector<cv::Rect> RecognizerUtils::findRectangles(
 }
 
 // static
-bool RecognizerUtils::isRectangle(const Contour& contour,
-    bool rotated) {
+bool RecognizerUtils::isRectangle(const Contour& contour, bool rotated) {
   if (contour.size() != 4) {
     return false;
   }
@@ -65,13 +69,14 @@ bool RecognizerUtils::isRectangle(const Contour& contour,
     for (int i = 0; i < 4; i++) {
       auto cosineAngle = calculateCosineAngle(contour[(i + 1) % 4], contour[i],
                                               contour[(i + 2) % 4]);
-      if (cosineAngle > 0.1) { // about 6 degrees error margin
+      if (cosineAngle > 0.1) {  // about 6 degrees error margin
         return false;
       }
     }
     return true;
   } else {
-    // TODO figure out the best way to check if the rectangle is vertical or horizontal
+    // TODO figure out the best way to check if the rectangle is vertical or
+    // horizontal
     return true;
   }
 }
@@ -102,8 +107,39 @@ int RecognizerUtils::getRandomInt(int min, int max) {
   return distribution(generator);
 }
 
-// static
-void RecognizerUtils::sortContourByArea(std::vector<Contour>& contours, bool descending) {
+namespace GameAssistant {
+namespace Utils {
+
+// TODO some of the orders are wrong, they are in RGB, fix them
+const std::vector<cv::Scalar> kDebugColors{
+    {0, 0, 255},    // Red
+    {0, 255, 0},    // Green
+    {255, 0, 0},    // Blue
+    {0, 255, 255},  // Yellow
+    {255, 255, 0},  // Cyan
+    {255, 0, 255},  // Magenta
+    {128, 0, 128},  // Purple
+    {255, 165, 0},  // Orange
+    {0, 128, 128},  // Teal
+};
+
+void showImage(const cv::Mat& image, const std::string& title) {
+  cv::setWindowTitle(kCvWindowName.data(), title);
+  cv::imshow(kCvWindowName.data(), image);
+  char ch = cv::waitKey();
+  switch (ch) {
+    case 'q':
+      exit(0);
+    case 's':
+      auto fileName = fmt::format("./images/{}.png", title);
+      cv::imwrite(fileName, image);
+      LOG(INFO) << "image saved to " << fileName;
+      break;
+  }
+}
+
+void sortContourByArea(std::vector<Contour>& contours,
+                                        bool descending) {
   std::sort(contours.begin(), contours.end(),
             [descending](const Contour& a, const Contour& b) {
               auto areaA = cv::contourArea(a);
@@ -111,3 +147,6 @@ void RecognizerUtils::sortContourByArea(std::vector<Contour>& contours, bool des
               return descending ? (areaA > areaB) : (areaA < areaB);
             });
 }
+
+}  // namespace Utils
+}  // namespace GameAssistant

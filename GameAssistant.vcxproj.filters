@@ -39,6 +39,12 @@
     <ClInclude Include="RecognizerUtils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="FreecellRecognizer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="FreecellData.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -65,11 +71,18 @@
     <ClCompile Include="RecognizerUtils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="FreecellRecognizer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="FreecellData.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="PropertySheet.props" />
     <None Include="packages.config" />
     <None Include=".clang-format" />
+    <None Include=".editorconfig" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="readme.txt" />

@@ -130,6 +130,8 @@
   <ItemGroup>
     <ClInclude Include="CaptureSnapshot.h" />
     <ClInclude Include="Defs.h" />
+    <ClInclude Include="FreecellData.h" />
+    <ClInclude Include="FreecellRecognizer.h" />
     <ClInclude Include="GameWindow.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="Player.h" />
@@ -139,6 +141,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CaptureSnapshot.cpp" />
+    <ClCompile Include="FreecellData.cpp" />
+    <ClCompile Include="FreecellRecognizer.cpp" />
     <ClCompile Include="GameWindow.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="pch.cpp">
@@ -151,6 +155,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include=".clang-format" />
+    <None Include=".editorconfig" />
     <None Include="packages.config" />
     <None Include="PropertySheet.props" />
     <Text Include="readme.txt">

@@ -16,20 +16,6 @@
 
 DECLARE_bool(debug);
 
-constexpr std::string_view kCvWindowName{"Auto Sudoku"};
-
-const std::vector<cv::Scalar> kDebugColors{
-    {255, 0, 0},    // Red
-    {0, 255, 0},    // Green
-    {0, 0, 255},    // Blue
-    {255, 255, 0},  // Yellow
-    {0, 255, 255},  // Cyan
-    {255, 0, 255},  // Magenta
-    {128, 0, 128},  // Purple
-    {255, 165, 0},  // Orange
-    {0, 128, 128},  // Teal
-};
-
 SudokuRecognizer::SudokuRecognizer(GameMode gameMode,
                                    std::shared_ptr<GameWindow> gameWindow)
     : gameMode_(gameMode), gameWindow_(gameWindow) {
@@ -58,7 +44,7 @@ void SudokuRecognizer::findBoardInWindow() {
       rectangles.push_back(approximation);
     }
   }
-  RecognizerUtils::sortContourByArea(rectangles, true);
+  GameAssistant::Utils::sortContourByArea(rectangles, true);
   if (FLAGS_debug) {
     cv::Mat debugImage = image_.clone();
     cv::drawContours(debugImage, rectangles, -1, cv::Scalar(0, 0, 255), 2);
@@ -226,7 +212,8 @@ bool SudokuRecognizer::recognizeIrreguluar() {
 
   cv::Mat displayImage = image_(boardRect_).clone();
   for (int i = 0; i < kDimension; i++) {
-    cv::drawContours(displayImage, blockContours, i, kDebugColors[i], 2);
+    cv::drawContours(displayImage, blockContours, i,
+                     GameAssistant::Utils::kDebugColors[i], 2);
   }
   showImage(displayImage, "recognizeIrreguluar block contours");
 
@@ -262,7 +249,8 @@ bool SudokuRecognizer::recognizeIrreguluar() {
           i, j, cellCenter.x, cellCenter.y);
       return false;
     }
-    cv::circle(displayImage, cellCenter, 20, kDebugColors[blockId], cv::FILLED);
+    cv::circle(displayImage, cellCenter, 20,
+               GameAssistant::Utils::kDebugColors[blockId], cv::FILLED);
   }
   showImage(displayImage, "Blocks with cell center");
 

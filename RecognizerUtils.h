@@ -1,7 +1,10 @@
 #pragma once
 
 #include <opencv2/core.hpp>
+
 #include "Defs.h"
+
+constexpr std::string_view kCvWindowName{"Game Assistant"};
 
 class RecognizerUtils {
  public:
@@ -9,15 +12,14 @@ class RecognizerUtils {
    * Calculate the cosine value of the angble between two vectors
    */
   static double calculateCosineAngle(cv::Point vertex, cv::Point side1,
-                               cv::Point side2);
+                                     cv::Point side2);
 
   /*
    * From a vector of contours find rectangles (not rotated) and optionally
    * sort the results by their areas in decending order
    */
   static std::vector<cv::Rect> findRectangles(
-      const std::vector<Contour>& contours,
-      bool sortByAreaDesc = false);
+      const std::vector<Contour>& contours, bool sortByAreaDesc = false);
 
   /*
    * Check if the given contour is a rectangle. A rectangle must have four and
@@ -36,3 +38,25 @@ class RecognizerUtils {
   static void sortContourByArea(std::vector<Contour>& contours,
                                 bool descending = false);
 };
+namespace GameAssistant {
+namespace Utils {
+
+enum DebugColors {
+  Red,
+  Green,
+  Blue,
+  Yellow,
+  Cyan,
+  Magenta,
+  Purple,
+  Orange,
+  Teal
+};
+
+extern const std::vector<cv::Scalar> kDebugColors;
+
+void showImage(const cv::Mat& image, const std::string& title = "");
+
+void sortContourByArea(std::vector<Contour>& contours, bool descending);
+}  // namespace Utils
+}  // namespace GameAssistant
