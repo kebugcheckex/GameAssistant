@@ -56,7 +56,5 @@ void showImage(const cv::Mat& image, const std::string& title = "");
 
 void sortContourByArea(std::vector<Contour>& contours, bool descending);
 
-void generateFreecellTemplate(const std::string& filePath);
-
 }  // namespace utils
 }  // namespace game_assistant

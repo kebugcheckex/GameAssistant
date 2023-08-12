@@ -127,7 +127,11 @@ void showImage(const cv::Mat& image, const std::string& title) {
     case 'q':
       exit(0);
     case 's':
-      auto fileName = fmt::format("./images/{}.png", title);
+      const auto now = std::chrono::system_clock::now();
+      auto timestamp =
+          std::chrono::duration_cast<std::chrono::hours>(now.time_since_epoch())
+              .count();
+      auto fileName = fmt::format("./images/{}_{}.png", title, timestamp);
       cv::imwrite(fileName, image);
       LOG(INFO) << "image saved to " << fileName;
       break;
@@ -143,42 +147,5 @@ void sortContourByArea(std::vector<Contour>& contours, bool descending) {
             });
 }
 
-void generateFreecellTemplate(const std::string& filePath) {
-  auto screenshot = cv::imread(filePath);
-  if (screenshot.empty()) {
-    LOG(FATAL) << fmt::format("Failed to read image file {}", filePath);
-  }
-  constexpr std::string_view kWindowName{"Freecell Template"};
-  cv::namedWindow(kWindowName.data());
-
-  constexpr std::string_view kOutputWindowName { "Freecell Output" };
-  cv::namedWindow(kOutputWindowName.data());
-  const int dx = 172, dy = 47, width = 118, height = 42;
-  cv::Mat output(height * 13, width * 4, CV_8UC3);
-  const cv::Point offset(130, 278);
-
-  int count = 1;
-  for (int col = 0; col < 8; col++) {
-    int numCards = col < 4 ? 7 : 6;
-    for (int row = 0; row < numCards; row++) {
-      cv::Rect sourceRect(offset.x + col * dx, offset.y + row * dy, width,
-                          height);
-      cv::imshow(kWindowName.data(), screenshot(sourceRect));
-      cv::waitKey(100);
-      std::string card;
-      std::cout << fmt::format("({}/52) Enter card: ", count++);
-      std::cin >> card;  // e.g. JH, 3C
-      int outputRow = freecell::kRankOrderMap.at(card.at(0));
-      int outputCol = freecell::kSuiteOrderMap.at(card.at(1));
-      cv::Rect destinationRect(outputCol * width, outputRow * height, width,
-                               height);
-      screenshot(sourceRect).copyTo(output(destinationRect));
-      cv::imshow(kOutputWindowName.data(), output);
-    }
-  }
-  cv::imshow(kWindowName.data(), output);
-  cv::waitKey(0);
-  cv::imwrite(R"(.\images\card_headers.png)", output);
-}
 }  // namespace utils
 }  // namespace game_assistant

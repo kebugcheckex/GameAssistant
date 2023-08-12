@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 #include <unordered_map>
+#include <opencv2/core.hpp>
 
 namespace game_assistant {
 namespace freecell {
@@ -44,7 +45,15 @@ extern const std::unordered_map<Rank, std::string> kRankNames;
 int encodeCardLocation(int column, int position);
 std::tuple<int, int> decodeCardLocation(int location);
 
+constexpr int kHorizontalDistance = 172, kVerticalDistance = 48;
+constexpr int kCardSymbolWidth = 18, kCardSymbolHeight = 44;
+constexpr int kCardHeaderWidth = 118, kCardHeaderHeight = 42;
+
+extern const cv::Point kFirstCardOffset;
+
 void printCard(const Card& card);
+
+void generateFreecellTemplate(const std::string& filePath);
 
 }  // namespace freecell
 }  // namespace game_assistant

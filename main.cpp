@@ -64,7 +64,7 @@ int main(int argc, char* argv[]) {
     game_assistant::freecell::FreecellRecognizer recognizer(gameWindow);
     recognizer.recognize();
   } else if (FLAGS_game == "utils") {
-    utils::generateFreecellTemplate(FLAGS_image_file);
+    freecell::generateFreecellTemplate(FLAGS_image_file);
   } else {
     std::cerr << fmt::format("Unknown game {}\n", FLAGS_game);
     return 1;
