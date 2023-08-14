@@ -78,7 +78,29 @@ std::tuple<int, int> decodeCardLocation(int location) {
 }
 
 void printCard(const Card& card) {
-  std::cout << kRankNames.at(card.rank) << kSuiteSymbols.at(card.suite) << " ";
+  if (card.rank == Rank::INVALID) {
+    std::cout << "XX ";
+  } else {
+    std::cout << kRankNames.at(card.rank) << kSuiteSymbols.at(card.suite)
+              << " ";
+  }
+}
+
+void printDeck(const Deck& deck) {
+  for (const auto& column : deck) {
+    for (const auto& card : column) {
+      printCard(card);
+    }
+    std::cout << "\n";
+  }
+}
+
+std::string formatCard(const int suite, const int rank) {
+  return formatCard(static_cast<Suite>(suite), static_cast<Rank>(rank));
+}
+
+std::string formatCard(const Suite suite, const Rank rank) {
+  return fmt::format("{}{}", kRankNames.at(rank), kSuiteSymbols.at(suite));
 }
 
 void generateFreecellTemplate(const std::string& filePath) {
@@ -92,15 +114,14 @@ void generateFreecellTemplate(const std::string& filePath) {
   constexpr std::string_view kOutputWindowName{"Freecell Output"};
   cv::namedWindow(kOutputWindowName.data());
   cv::Mat output(kCardHeaderHeight * 13, kCardHeaderWidth * 4, CV_8UC3);
-  
+
   int count = 1;
   for (int col = 0; col < 8; col++) {
     int numCards = col < 4 ? 7 : 6;
     for (int row = 0; row < numCards; row++) {
       cv::Rect sourceRect(kFirstCardOffset.x + col * kHorizontalDistance,
                           kFirstCardOffset.y + row * kVerticalDistance,
-                          kCardHeaderWidth,
-                          kCardHeaderHeight);
+                          kCardHeaderWidth, kCardHeaderHeight);
       cv::imshow(kWindowName.data(), screenshot(sourceRect));
       cv::waitKey(100);
       std::string card;

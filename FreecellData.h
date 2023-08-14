@@ -23,6 +23,7 @@ enum Rank {
   J,
   Q,
   K,
+  INVALID,
 };
 
 typedef struct {
@@ -46,12 +47,16 @@ int encodeCardLocation(int column, int position);
 std::tuple<int, int> decodeCardLocation(int location);
 
 constexpr int kHorizontalDistance = 172, kVerticalDistance = 48;
-constexpr int kCardSymbolWidth = 18, kCardSymbolHeight = 44;
+constexpr int kCardSymbolWidth = 18, kCardSymbolHeight = 40;
 constexpr int kCardHeaderWidth = 118, kCardHeaderHeight = 42;
 
 extern const cv::Point kFirstCardOffset;
 
 void printCard(const Card& card);
+void printDeck(const Deck& deck);
+
+std::string formatCard(const int suite, const int rank);
+std::string formatCard(const Suite suite, const Rank rank);
 
 void generateFreecellTemplate(const std::string& filePath);
 

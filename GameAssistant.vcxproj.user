@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <LocalDebuggerCommandArguments>--game freecell --window-size 1600x1600 --image-file .\images\freecell1600.png</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>--game freecell --window-size 1600x1600</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
     <LocalDebuggerEnvironment>GLOG_logtostderr=1
 GLOG_stderrthreshold=0

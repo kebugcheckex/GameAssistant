@@ -17,13 +17,16 @@ typedef struct {
 class FreecellRecognizer {
  public:
   FreecellRecognizer(std::shared_ptr<GameWindow> gameWindow);
-  bool recognize();
+  bool recognize_sift();
   bool recognize_old();
+  bool recognizeSuites();
+  bool recognize();
 
  private:
   void printCardWithLocation(const CardWithLocation& card);
-  char recognizeRank(cv::Mat& image);
+  std::pair<int, int> getCardColumnAndRow(const cv::Point& location);
   Deck deck_;
+  std::vector<std::vector<cv::Point>> cardLocations_;
   std::shared_ptr<GameWindow> gameWindow_;
 };
 
