@@ -5,7 +5,7 @@
 #include <opencv2/core.hpp>
 
 #include "../RecognizerUtils.h"
-#include "../Defs.h"
+
 
 TEST(TestCalculateAngle, rightAngle) {
   cv::Point vertex(0, 0), side1(2, 0), side2(0, 3);

@@ -18,7 +18,7 @@ class FreecellRecognizer {
  public:
   FreecellRecognizer(std::shared_ptr<GameWindow> gameWindow);
   bool recognize_sift();
-  bool recognize_old();
+  bool recognizeTemplateMatching();
   bool recognizeSuites();
   bool recognize();
 

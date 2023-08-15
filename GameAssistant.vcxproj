@@ -129,6 +129,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="CaptureSnapshot.h" />
+    <ClInclude Include="FreecellPlayer.h" />
     <ClInclude Include="SudokuData.h" />
     <ClInclude Include="FreecellData.h" />
     <ClInclude Include="FreecellRecognizer.h" />
@@ -142,6 +143,7 @@
   <ItemGroup>
     <ClCompile Include="CaptureSnapshot.cpp" />
     <ClCompile Include="FreecellData.cpp" />
+    <ClCompile Include="FreecellPlayer.cpp" />
     <ClCompile Include="FreecellRecognizer.cpp" />
     <ClCompile Include="GameWindow.cpp" />
     <ClCompile Include="main.cpp" />
@@ -159,6 +161,8 @@
     <None Include=".editorconfig" />
     <None Include="packages.config" />
     <None Include="PropertySheet.props" />
+    <None Include="ReadMe.md" />
+    <None Include="TODO.md" />
     <Text Include="readme.txt">
       <DeploymentContent>false</DeploymentContent>
     </Text>

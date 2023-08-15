@@ -45,6 +45,9 @@
     <ClInclude Include="FreecellData.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="FreecellPlayer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -80,12 +83,17 @@
     <ClCompile Include="SudokuData.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="FreecellPlayer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="PropertySheet.props" />
     <None Include="packages.config" />
     <None Include=".clang-format" />
     <None Include=".editorconfig" />
+    <None Include="ReadMe.md" />
+    <None Include="TODO.md" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="readme.txt" />

@@ -42,13 +42,16 @@
     <VcpkgConfiguration>Debug</VcpkgConfiguration>
   </PropertyGroup>
   <ItemGroup>
+    <ClInclude Include="..\FreecellPlayer.h" />
     <ClInclude Include="..\RecognizerUtils.h" />
     <ClInclude Include="..\SudokuBoard.h" />
     <ClInclude Include="pch.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\FreecellPlayer.cpp" />
     <ClCompile Include="..\RecognizerUtils.cpp" />
     <ClCompile Include="..\SudokuBoard.cpp" />
+    <ClCompile Include="FreecellPlayerTest.cpp" />
     <ClCompile Include="RecognizeUtilsTest.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>

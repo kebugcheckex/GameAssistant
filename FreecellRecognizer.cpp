@@ -39,7 +39,7 @@ FreecellRecognizer::FreecellRecognizer(std::shared_ptr<GameWindow> gameWindow)
   }
 }
 
-bool FreecellRecognizer::recognize_old() {
+bool FreecellRecognizer::recognizeTemplateMatching() {
   constexpr int kThreshold = 180;
   const cv::Rect decksArea(kFirstCardOffset, cv::Point(1470, 640));
 
@@ -142,7 +142,7 @@ std::pair<int, int> FreecellRecognizer::getCardColumnAndRow(
   return {col, row};
 }
 
-bool FreecellRecognizer::recognize() { return recognize_old(); }
+bool FreecellRecognizer::recognize() { return recognizeTemplateMatching(); }
 
 bool FreecellRecognizer::recognize_sift() {
   auto snapshot = gameWindow_->getSnapshot();
