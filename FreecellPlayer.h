@@ -1,11 +1,16 @@
 #pragma once
 
-#include "GameWindow.h"
+#include "IGameWindow.h"
 
 namespace game_assistant {
 namespace freecell {
 
 enum LocationType { Stack, Freecell, Foundation };
+
+const std::unordered_map<LocationType, std::string> kLocationTypeNames{
+    {LocationType::Stack, "Stack"},
+    {LocationType::Freecell, "Freecell"},
+    {LocationType::Foundation, "Foundation"}};
 
 typedef struct {
   LocationType type;
@@ -19,11 +24,13 @@ typedef struct {
 
 class FreecellPlayer {
  public:
-  explicit FreecellPlayer(std::shared_ptr<GameWindow> gameWindow);
+  explicit FreecellPlayer(std::shared_ptr<IGameWindow> gameWindow);
   void play(const std::string& solutionsFilePath);
 
+  static void printMoves(const std::vector<Move>& moves);
+
  private:
-  std::shared_ptr<GameWindow> gameWindow_;
+  std::shared_ptr<IGameWindow> gameWindow_;
 };
 
 }  // namespace freecell

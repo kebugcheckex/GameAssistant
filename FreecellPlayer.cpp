@@ -3,11 +3,13 @@
 #include "FreecellPlayer.h"
 
 #include <fstream>
+#include <iostream>
 #include <regex>
+#include <fmt/core.h>
 
 namespace game_assistant {
 namespace freecell {
-FreecellPlayer::FreecellPlayer(std::shared_ptr<GameWindow> gameWindow)
+FreecellPlayer::FreecellPlayer(std::shared_ptr<IGameWindow> gameWindow)
     : gameWindow_(gameWindow) {}
 
 void FreecellPlayer::play(const std::string& solutionsFilePath) {
@@ -15,8 +17,10 @@ void FreecellPlayer::play(const std::string& solutionsFilePath) {
   std::string line;
 
   std::regex pattern(
-      "Move ([0-9a]) cards? from ((stack|freecell)) (\\d) to "
-      "(stack|freecell|foundation)( \\d)?");
+      "Move ([0-9a]) cards? from (stack|freecell) (\\d) to "
+      "(stack|freecell|the foundation)( \\d)?");
+
+  std::vector<Move> moves;
 
   while (std::getline(solutionsFile, line)) {
     if (line.find("Move") == std::string::npos) {
@@ -25,8 +29,9 @@ void FreecellPlayer::play(const std::string& solutionsFilePath) {
     std::smatch sm;
     std::regex_search(line, sm, pattern);
     if (sm.size() < 4) {
-      LOG(FATAL) << "Invalid line: " << line;
+      LOG(ERROR) << "Invalid line: " << line;
     }
+
     int numCards;
     if (sm.str(1) == "a") {
       numCards = 1;
@@ -42,18 +47,43 @@ void FreecellPlayer::play(const std::string& solutionsFilePath) {
     } else {
       LOG(FATAL) << "Invalid line: " << line;
     }
-    fromId = std::stoi(sm.str(3));
+    try {
+      fromId = std::stoi(sm.str(3));
+    } catch (std::exception& ex) {
+      LOG(ERROR) << fmt::format("Failed to stoi {} due to {}", sm.str(3),
+                                ex.what());
+      continue;
+    }
 
     if (sm.str(4).find("stack") != std::string::npos) {
       toType = LocationType::Stack;
     } else if (sm.str(4).find("freecell") != std::string::npos) {
       toType = LocationType::Freecell;
-    } else if (sm.str(4).find("foundation") != std::string::npos) {
+    } else if (sm.str(4).find("the foundation") != std::string::npos) {
       toType = LocationType::Foundation;
+    } else {
+      LOG(ERROR) << "Bad line " << line;
+      continue;
     }
 
     toId = toType == LocationType::Foundation ? -1 : std::stoi(sm.str(5));
+
+    moves.push_back({numCards, {fromType, fromId}, {toType, toId}});
   }
+
+  printMoves(moves);
+}
+
+// static
+void FreecellPlayer::printMoves(const std::vector<Move>& moves) {
+  for (const auto& move : moves) {
+    std::cout << fmt::format("{} cards: {} {} => {} {}\n", move.numCards,
+                             kLocationTypeNames.at(move.from.type), move.from.id,
+                             kLocationTypeNames.at(move.to.type),
+        move.to.type != LocationType::Foundation ? std::to_string(move.to.id) : "");
+  
+  }
+
 }
 }  // namespace freecell
 }  // namespace game_assistant

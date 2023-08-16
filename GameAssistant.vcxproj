@@ -130,6 +130,7 @@
   <ItemGroup>
     <ClInclude Include="CaptureSnapshot.h" />
     <ClInclude Include="FreecellPlayer.h" />
+    <ClInclude Include="IGameWindow.h" />
     <ClInclude Include="SudokuData.h" />
     <ClInclude Include="FreecellData.h" />
     <ClInclude Include="FreecellRecognizer.h" />
@@ -159,6 +160,7 @@
   <ItemGroup>
     <None Include=".clang-format" />
     <None Include=".editorconfig" />
+    <None Include=".gitignore" />
     <None Include="packages.config" />
     <None Include="PropertySheet.props" />
     <None Include="ReadMe.md" />

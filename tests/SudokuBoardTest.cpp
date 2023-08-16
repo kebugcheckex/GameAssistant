@@ -4,6 +4,8 @@
 
 #include "../SudokuBoard.h"
 
+namespace game_assistant {
+namespace sudoku {
 TEST(TestSolveClassicBoard, solveBoardCorrect1) {
   Board initialBoard{
       {0, 5, 0, 2, 0, 0, 0, 4, 0}, {0, 0, 4, 5, 0, 0, 0, 0, 6},
@@ -47,3 +49,5 @@ TEST(TestSolveClassicBoard, solveBoardCorrect2) {
   auto result = sudokuBoard.getCompletedBoard();
   EXPECT_EQ(solvedBoard, result);
 }
+}  // namespace sudoku
+}  // namespace game_assistant

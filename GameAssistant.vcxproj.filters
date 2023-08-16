@@ -48,6 +48,9 @@
     <ClInclude Include="FreecellPlayer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="IGameWindow.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -94,6 +97,7 @@
     <None Include=".editorconfig" />
     <None Include="ReadMe.md" />
     <None Include="TODO.md" />
+    <None Include=".gitignore" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="readme.txt" />

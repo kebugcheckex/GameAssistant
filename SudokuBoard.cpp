@@ -9,6 +9,7 @@
 #include "SudokuBoard.h"
 
 #include <fmt/core.h>
+#include <iostream>
 
 namespace game_assistant {
 namespace sudoku {
