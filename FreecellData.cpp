@@ -4,6 +4,7 @@
 
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgcodecs.hpp>
+#include <unordered_set>
 
 namespace game_assistant {
 namespace freecell {
@@ -57,7 +58,7 @@ const std::unordered_map<Rank, std::string> kRankNames{
 };
 
 constexpr int kEncodeFactor = 100;
-const cv::Point kFirstCardOffset(130, 278);
+
 
 const std::string kReferenceData =
     "5C 4H 2H 3D 6C 8C 2D"
@@ -103,43 +104,51 @@ std::string formatCard(const Suite suite, const Rank rank) {
   return fmt::format("{}{}", kRankNames.at(rank), kSuiteSymbols.at(suite));
 }
 
-void generateFreecellTemplate(const std::string& filePath) {
-  auto screenshot = cv::imread(filePath);
-  if (screenshot.empty()) {
-    LOG(FATAL) << fmt::format("Failed to read image file {}", filePath);
-  }
-  constexpr std::string_view kWindowName{"Freecell Template"};
-  cv::namedWindow(kWindowName.data());
 
-  constexpr std::string_view kOutputWindowName{"Freecell Output"};
-  cv::namedWindow(kOutputWindowName.data());
-  cv::Mat output(kCardHeaderHeight * 13, kCardHeaderWidth * 4, CV_8UC3);
 
-  int count = 1;
-  for (int col = 0; col < 8; col++) {
-    int numCards = col < 4 ? 7 : 6;
-    for (int row = 0; row < numCards; row++) {
-      cv::Rect sourceRect(kFirstCardOffset.x + col * kHorizontalDistance,
-                          kFirstCardOffset.y + row * kVerticalDistance,
-                          kCardHeaderWidth, kCardHeaderHeight);
-      cv::imshow(kWindowName.data(), screenshot(sourceRect));
-      cv::waitKey(100);
-      std::string card;
-      std::cout << fmt::format("({}/52) Enter card: ", count++);
-      std::cin >> card;  // e.g. JH, 3C
-      int outputRow = freecell::kRankOrderMap.at(card.at(0));
-      int outputCol = freecell::kSuiteOrderMap.at(card.at(1));
-      cv::Rect destinationRect(outputCol * kCardHeaderWidth,
-                               outputRow * kCardHeaderHeight, kCardHeaderWidth,
-                               kCardHeaderHeight);
-      screenshot(sourceRect).copyTo(output(destinationRect));
-      cv::imshow(kOutputWindowName.data(), output);
-    }
-  }
-  cv::imshow(kWindowName.data(), output);
-  cv::waitKey(0);
-  cv::imwrite(R"(.\images\card_headers.png)", output);
+int encodeCard(const int suite, const int rank) { return suite * 100 + rank; }
+
+int encodeCard(const Suite suite, const Rank rank) {
+  return encodeCard(static_cast<int>(suite), static_cast<int>(rank));
 }
 
+int encodeCard(const Card& card) { return encodeCard(card.suite, card.rank); }
+
+void validateDeck(const Deck& deck) {
+  std::unordered_set<Card, CardHash, CardEquality> cards;
+  for (int suite = 0; suite < 4; suite++) {
+    for (int rank = 0; rank < 13; rank++) {
+      cards.insert(Card{suite, rank});
+    }
+    if (deck.size() != 8) {
+      throw std::runtime_error(
+          fmt::format("Invalid deck: wrong column number {}", deck.size()));
+    }
+    for (int col = 0; col < 8; col++) {
+      int numCards = col < 4 ? 7 : 6;
+      auto& column = deck[col];
+      if (column.size() != numCards) {
+        throw std::runtime_error(
+            fmt::format("Invalid deck: wrong number of cards {} in column {}",
+                        column.size(), col));
+      }
+      for (int row = 0; row < numCards; row++) {
+        if (cards.find(column[row]) == cards.end()) {
+          throw std::runtime_error(fmt::format("Invalid deck: invalid card {}",
+                                               formatCard(column[row])));
+        }
+      }
+    }
+
+    if (!cards.empty()) {
+      std::ostringstream oss;
+      for (const auto& card : cards) {
+        oss << formatCard(card) << ", ";
+      }
+      throw std::runtime_error(
+          fmt::format("Invalid deck: missing card(s) {}", oss.str()));
+    }
+  }
+}
 }  // namespace freecell
 }  // namespace game_assistant

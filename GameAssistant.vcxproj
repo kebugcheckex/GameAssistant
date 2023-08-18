@@ -130,6 +130,7 @@
   <ItemGroup>
     <ClInclude Include="CaptureSnapshot.h" />
     <ClInclude Include="FreecellPlayer.h" />
+    <ClInclude Include="FreecellSolver.h" />
     <ClInclude Include="IGameWindow.h" />
     <ClInclude Include="SudokuData.h" />
     <ClInclude Include="FreecellData.h" />

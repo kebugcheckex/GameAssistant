@@ -14,6 +14,12 @@ typedef struct {
   cv::Point location;
 } CardWithLocation;
 
+constexpr int kHorizontalDistance = 172, kVerticalDistance = 48;
+constexpr int kCardSymbolWidth = 18, kCardSymbolHeight = 40;
+constexpr int kCardHeaderWidth = 118, kCardHeaderHeight = 42;
+
+extern const cv::Point kFirstCardOffset;
+
 class FreecellRecognizer {
  public:
   FreecellRecognizer(std::shared_ptr<GameWindow> gameWindow);
@@ -29,6 +35,8 @@ class FreecellRecognizer {
   std::vector<std::vector<cv::Point>> cardLocations_;
   std::shared_ptr<GameWindow> gameWindow_;
 };
+
+void generateFreecellTemplate(const std::string& filePath);
 
 }  // namespace freecell
 }  // namespace game_assistant

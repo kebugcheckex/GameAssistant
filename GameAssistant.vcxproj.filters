@@ -51,6 +51,9 @@
     <ClInclude Include="IGameWindow.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="FreecellSolver.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">

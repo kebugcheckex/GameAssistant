@@ -7,7 +7,7 @@
 
 namespace game_assistant {
 namespace freecell {
-enum Suite { CLUB, SPADE, DIAMOND, HEART };
+enum Suite { CLUB, SPADE, DIAMOND, HEART, INVALID_SUITE };
 
 enum Rank {
   A,
@@ -26,10 +26,26 @@ enum Rank {
   INVALID,
 };
 
-typedef struct {
+typedef struct sCard {
   Suite suite;
   Rank rank;
+
+  sCard(int iSuite, int iRank)
+      : suite(static_cast<Suite>(iSuite)), rank(static_cast<Rank>(iRank)) {}
 } Card;
+
+struct CardHash {
+  std::size_t operator()(const Card& card) const {
+    return static_cast<size_t>(static_cast<int>(card.suite)) * 100 +
+           static_cast<size_t>(card.rank);
+  }
+};
+
+struct CardEquality {
+  bool operator()(const Card& lhs, const Card& rhs) const {
+    return lhs.rank == rhs.rank && lhs.suite == rhs.suite;
+  }
+};
 
 typedef std::vector<Card> Column;
 
@@ -46,19 +62,18 @@ extern const std::unordered_map<Rank, std::string> kRankNames;
 int encodeCardLocation(int column, int position);
 std::tuple<int, int> decodeCardLocation(int location);
 
-constexpr int kHorizontalDistance = 172, kVerticalDistance = 48;
-constexpr int kCardSymbolWidth = 18, kCardSymbolHeight = 40;
-constexpr int kCardHeaderWidth = 118, kCardHeaderHeight = 42;
-
-extern const cv::Point kFirstCardOffset;
-
 void printCard(const Card& card);
 void printDeck(const Deck& deck);
 
 std::string formatCard(const int suite, const int rank);
 std::string formatCard(const Suite suite, const Rank rank);
+std::string formatCard(const Card& card);
 
-void generateFreecellTemplate(const std::string& filePath);
+int encodeCard(const Card& card);
+int encodeCard(const Suite suite, const Rank rank);
+int encodeCard(const int suite, const int rank);
+
+void validateDeck(const Deck& deck);
 
 }  // namespace freecell
 }  // namespace game_assistant

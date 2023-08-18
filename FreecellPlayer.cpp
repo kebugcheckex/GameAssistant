@@ -2,10 +2,11 @@
 
 #include "FreecellPlayer.h"
 
+#include <fmt/core.h>
+
 #include <fstream>
 #include <iostream>
 #include <regex>
-#include <fmt/core.h>
 
 namespace game_assistant {
 namespace freecell {
@@ -78,11 +79,16 @@ void FreecellPlayer::play(const std::string& solutionsFilePath) {
 void FreecellPlayer::printMoves(const std::vector<Move>& moves) {
   for (const auto& move : moves) {
     std::cout << fmt::format("{} cards: {} {} => {} {}\n", move.numCards,
-                             kLocationTypeNames.at(move.from.type), move.from.id,
-                             kLocationTypeNames.at(move.to.type),
-        move.to.type != LocationType::Foundation ? std::to_string(move.to.id) : "");
-  
+                             kLocationTypeNames.at(move.from.type),
+                             move.from.id, kLocationTypeNames.at(move.to.type),
+                             move.to.type != LocationType::Foundation
+                                 ? std::to_string(move.to.id)
+                                 : "");
   }
+}
+
+// static
+void FreecellPlayer::validateSolution(const Solution& solution) {
 
 }
 }  // namespace freecell
