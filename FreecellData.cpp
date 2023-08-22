@@ -104,7 +104,9 @@ std::string formatCard(const Suite suite, const Rank rank) {
   return fmt::format("{}{}", kRankNames.at(rank), kSuiteSymbols.at(suite));
 }
 
-
+std::string formatCard(const Card& card) {
+  return formatCard(card.suite, card.rank);
+}
 
 int encodeCard(const int suite, const int rank) { return suite * 100 + rank; }
 

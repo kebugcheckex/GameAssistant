@@ -3,6 +3,8 @@
 #include "FreecellData.h"
 #include "IGameWindow.h"
 
+#include <fmt/format.h>
+
 namespace game_assistant {
 namespace freecell {
 
